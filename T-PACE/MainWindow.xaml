@@ -11,7 +11,6 @@
     <!-- Recursos de Estilo Monocromático -->
     <Window.Resources>
 
-        <!-- Efeito de seleção da lista (Fundo da linha) -->
         <Style TargetType="ListBoxItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="Padding" Value="0"/>
@@ -34,7 +33,6 @@
             </Setter>
         </Style>
 
-        <!-- NOVO: Molde customizado para os Botões (Remove o hover azul do Windows) -->
         <Style TargetType="Button">
             <Setter Property="Template">
                 <Setter.Value>
@@ -43,11 +41,9 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- Efeito suave de transparência ao passar o mouse -->
                             <Trigger Property="IsMouseOver" Value="true">
                                 <Setter TargetName="border" Property="Opacity" Value="0.85"/>
                             </Trigger>
-                            <!-- Efeito ao clicar -->
                             <Trigger Property="IsPressed" Value="true">
                                 <Setter TargetName="border" Property="Opacity" Value="0.70"/>
                             </Trigger>
@@ -122,15 +118,12 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <!-- Pedido ID -->
                         <RowDefinition Height="Auto"/>
-                        <!-- Campo de Busca -->
                         <RowDefinition Height="Auto"/>
-                        <!-- Cabeçalho da Tabela -->
                         <RowDefinition Height="*"/>
-                        <!-- Lista de Itens -->
                     </Grid.RowDefinitions>
 
+                    <!-- ID do Pedido -->
                     <TextBlock Grid.Row="0" Text="Pedido #10405" FontSize="18" FontWeight="Black" Foreground="#5E3A7D" Margin="0,0,0,15"/>
 
                     <!-- Campo de Pesquisa -->
@@ -177,9 +170,9 @@
                         </Grid>
                     </Border>
 
-                    <!-- Lista de Produtos Adicionados com DataTemplate (Ligação de Dados) -->
+                    <!-- Lista de Produtos Adicionados (Ligação Dinâmica) -->
                     <ListBox x:Name="listaCupom" Grid.Row="3" BorderThickness="0" Background="Transparent" 
-         ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border Padding="10,12">
@@ -192,7 +185,6 @@
                                             <ColumnDefinition Width="2*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <!-- Os "{Binding}" avisam o XAML para puxar a informação direto do C# -->
                                         <TextBlock Grid.Column="0" Text="{Binding Codigo}" Foreground="#5E3A7D" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="1" Text="{Binding Descricao}" FontWeight="Bold" FontSize="16" Foreground="#2A1143" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" VerticalAlignment="Center" Margin="0,0,15,0"/>
                                         <TextBlock Grid.Column="2" Text="{Binding Quantidade}" Foreground="#2A1143" FontSize="16" FontWeight="Black" TextAlignment="Center" VerticalAlignment="Center"/>
@@ -214,9 +206,7 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
-                        <!-- Último Item Dinâmico -->
                         <RowDefinition Height="Auto"/>
-                        <!-- Fechamento -->
                     </Grid.RowDefinitions>
 
                     <!-- Destaque: Último Item Adicionado -->
@@ -226,46 +216,46 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Placeholder de Imagem para preencher o vazio e dar visualização do produto -->
+                        <!-- Placeholder de Imagem -->
                         <Grid Grid.Row="0" Margin="0,0,0,25">
                             <Rectangle Fill="#33D6C4E8" Stroke="#66D6C4E8" StrokeThickness="2" StrokeDashArray="4 4" RadiusX="8" RadiusY="8"/>
                             <TextBlock Text="FOTO DO PRODUTO" Foreground="#885E3A7D" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
 
-                        <!-- Informações do Item usando Viewbox controlado -->
+                        <!-- Informações do Item dinâmicas -->
                         <Viewbox Grid.Row="1" Stretch="Uniform" HorizontalAlignment="Left" MaxHeight="100">
                             <StackPanel>
-                                <TextBlock Text="Calça Jeans Skinny Masculina" FontSize="24" FontWeight="Black" Foreground="#2A1143" Margin="0,0,0,5" TextWrapping="Wrap" MaxWidth="300"/>
-                                <TextBlock Text="Cód: 789002  |  Qtd: 1 un" FontSize="16" FontWeight="Bold" Foreground="#5E3A7D" Margin="0,0,0,10"/>
-                                <TextBlock Text="R$ 119,90" FontSize="32" FontWeight="Black" Foreground="#A45FCE"/>
+                                <TextBlock x:Name="txtUltimoNome" Text=" " FontSize="24" FontWeight="Black" Foreground="#2A1143" Margin="0,0,0,5" TextWrapping="Wrap" MaxWidth="300"/>
+                                <TextBlock x:Name="txtUltimoDetalhes" Text="Cód: ---  |  Qtd: --" FontSize="16" FontWeight="Bold" Foreground="#5E3A7D" Margin="0,0,0,10"/>
+                                <TextBlock x:Name="txtUltimoPreco" Text="R$ 0,00" FontSize="32" FontWeight="Black" Foreground="#A45FCE"/>
                             </StackPanel>
                         </Viewbox>
                     </Grid>
 
-                    <!-- Área de Fechamento (Subtotais e Botão Final) -->
+                    <!-- Área de Fechamento -->
                     <Border Grid.Row="1" Background="#CCF8F3FC" Padding="30" CornerRadius="0,0,12,12" BorderBrush="#44D6C4E8" BorderThickness="0,1.5,0,0">
                         <StackPanel>
-                            <!-- Dados Financeiros -->
+                            <!-- Dados Financeiros Dinâmicos -->
                             <Grid Margin="0,0,0,15">
                                 <TextBlock Text="Subtotal da Venda" FontSize="16" FontWeight="Bold" Foreground="#5E3A7D"/>
-                                <TextBlock Text="R$ 219,70" FontSize="16" FontWeight="Bold" Foreground="#2A1143" HorizontalAlignment="Right"/>
+                                <TextBlock x:Name="txtSubtotal" Text="R$ 0,00" FontSize="16" FontWeight="Bold" Foreground="#2A1143" HorizontalAlignment="Right"/>
                             </Grid>
                             <Grid Margin="0,0,0,20">
                                 <TextBlock Text="Descontos Aplicados" FontSize="16" FontWeight="Bold" Foreground="#5E3A7D"/>
-                                <TextBlock Text="- R$ 0,00" FontSize="16" FontWeight="Bold" Foreground="#A45FCE" HorizontalAlignment="Right"/>
+                                <TextBlock x:Name="txtDesconto" Text="- R$ 0,00" FontSize="16" FontWeight="Bold" Foreground="#A45FCE" HorizontalAlignment="Right"/>
                             </Grid>
 
                             <Border BorderBrush="#44D6C4E8" BorderThickness="0,1.5,0,0" Margin="0,0,0,20"/>
 
-                            <!-- Total Final com Viewbox ajustado -->
+                            <!-- Total Final -->
                             <Grid Margin="0,0,0,30">
                                 <TextBlock Text="TOTAL" FontSize="22" FontWeight="Black" Foreground="#2A1143" VerticalAlignment="Bottom" Margin="0,0,0,5"/>
                                 <Viewbox MaxHeight="55" HorizontalAlignment="Right" Margin="80,0,0,0">
-                                    <TextBlock x:Name="txtTotal" Text="R$ 219,70" FontWeight="Black" Foreground="#A45FCE"/>
+                                    <TextBlock x:Name="txtTotal" Text="R$ 0,00" FontWeight="Black" Foreground="#A45FCE"/>
                                 </Viewbox>
                             </Grid>
 
-                            <!-- Botão Vibrante Responsivo -->
+                            <!-- Botão de Ação -->
                             <Button x:Name="btnFinalizar" Cursor="Hand" BorderThickness="0" Padding="0,20" Background="#A45FCE" Foreground="#F8F3FC">
                                 <Button.Effect>
                                     <DropShadowEffect Color="#2A1143" Opacity="0.5" BlurRadius="20" ShadowDepth="6" Direction="270"/>
@@ -281,7 +271,7 @@
             </Border>
         </Grid>
 
-        <!-- ================= RODAPÉ RESPONSIVO ================= -->
+        <!-- ================= RODAPÉ ================= -->
         <Border Grid.Row="2" Background="#44F8F3FC" BorderBrush="#44D6C4E8" BorderThickness="0,1.5,0,0" Padding="10">
             <WrapPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="[ F2 ] Receber Venda" Foreground="#F8F3FC" FontSize="14" FontWeight="Bold" Margin="15,5"/>

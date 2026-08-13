@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -11,6 +12,9 @@ namespace T_PACE
     {
         private ProdutoRepository _repositorio;
         public ObservableCollection<ItemCupom> Carrinho { get; set; }
+
+        // Controle de desconto da venda atual
+        private decimal _descontoVenda = 0m;
 
         public MainWindow()
         {
@@ -31,9 +35,7 @@ namespace T_PACE
             listaCupom.ItemsSource = Carrinho;
             txtBusca.KeyDown += TxtBusca_KeyDown;
 
-            // ========================================================
-            // CHAMA A SINCRONIZAÇÃO EM SEGUNDO PLANO SEM TRAVAR A TELA
-            // ========================================================
+            // Sincroniza em segundo plano
             Task.Run(async () => await SincronizacaoService.SincronizarProdutosAsync());
         }
 
@@ -76,6 +78,11 @@ namespace T_PACE
                         });
                     }
 
+                    // Atualiza os detalhes visuais do último produto passado
+                    txtUltimoNome.Text = produto.nome;
+                    txtUltimoDetalhes.Text = $"Cód: {produto.codigo_barras}  |  Qtd: 1 un";
+                    txtUltimoPreco.Text = $"R$ {produto.preco_venda:N2}";
+
                     AtualizarTotais();
                     txtBusca.Clear();
                 }
@@ -87,18 +94,25 @@ namespace T_PACE
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Produto inexistente", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Erro na busca: {ex.Message}", "Erro Crítico", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void AtualizarTotais()
         {
+            // Calcula o subtotal somando os itens do carrinho
             decimal subtotal = Carrinho.Sum(i => i.Total);
-            txtTotal.Text = $"R$ {subtotal:N2}";
+
+            // Subtrai o desconto para chegar no total real
+            decimal total = subtotal - _descontoVenda;
+
+            // Altera o texto na interface gráfica formetando para Reais
+            txtSubtotal.Text = $"R$ {subtotal:N2}";
+            txtDesconto.Text = $"- R$ {_descontoVenda:N2}";
+            txtTotal.Text = $"R$ {total:N2}";
         }
     }
 
-    // CORREÇÃO: Implementado INotifyPropertyChanged para atualizar a UI ao somar itens
     public class ItemCupom : INotifyPropertyChanged
     {
         private int _quantidade;
