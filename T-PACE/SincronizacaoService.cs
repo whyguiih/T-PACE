@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Data.Sqlite;
@@ -9,10 +10,70 @@ using Dapper;
 
 namespace T_PACE
 {
+    // Tradutor para valores Decimais vazios ("") vindos do Cloudflare
+    public class DecimalNullConverter : JsonConverter<decimal?>
+    {
+        public override decimal? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                string valor = reader.GetString();
+                if (string.IsNullOrWhiteSpace(valor)) return null;
+
+                if (decimal.TryParse(valor, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal result))
+                    return result;
+
+                return null;
+            }
+            if (reader.TokenType == JsonTokenType.Number)
+            {
+                return reader.GetDecimal();
+            }
+            return null;
+        }
+
+        public override void Write(Utf8JsonWriter writer, decimal? value, JsonSerializerOptions options)
+        {
+            if (value.HasValue) writer.WriteNumberValue(value.Value);
+            else writer.WriteNullValue();
+        }
+    }
+
+    // NOVO: Tradutor para Booleans (Converte 0/1 do SQLite para false/true do C#)
+    public class BooleanConverter : JsonConverter<bool>
+    {
+        public override bool Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.True) return true;
+            if (reader.TokenType == JsonTokenType.False) return false;
+
+            // Se o Cloudflare mandar como número (ex: 0 ou 1)
+            if (reader.TokenType == JsonTokenType.Number)
+            {
+                return reader.GetInt32() == 1;
+            }
+
+            // Se o Cloudflare mandar como texto (ex: "0" ou "1")
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                string valor = reader.GetString();
+                if (valor == "1" || valor?.ToLower() == "true") return true;
+                if (valor == "0" || valor?.ToLower() == "false" || string.IsNullOrWhiteSpace(valor)) return false;
+            }
+
+            return false; // Padrão de segurança
+        }
+
+        public override void Write(Utf8JsonWriter writer, bool value, JsonSerializerOptions options)
+        {
+            writer.WriteBooleanValue(value);
+        }
+    }
+
     public static class SincronizacaoService
     {
         // Cole a URL do seu Cloudflare Worker aqui
-        private static readonly string apiUrl = "https://tpace-api.whyguiih.workers.dev/";
+        private static readonly string apiUrl = "https://tpace-api.whyguiih.workers.dev/api/app/produtos";
 
         public static async Task SincronizarProdutosAsync()
         {
@@ -20,11 +81,16 @@ namespace T_PACE
             {
                 try
                 {
-                    // 1. Puxa o JSON do Cloudflare
+                    // Puxa o JSON do Cloudflare
                     var response = await client.GetStringAsync(apiUrl);
 
-                    // 2. Converte o JSON
-                    var produtosCloudflare = JsonSerializer.Deserialize<List<Produto>>(response);
+                    // Avisamos o C# para usar os nossos dois tradutores flexíveis
+                    var opcoesJson = new JsonSerializerOptions();
+                    opcoesJson.Converters.Add(new DecimalNullConverter());
+                    opcoesJson.Converters.Add(new BooleanConverter());
+
+                    // Converte o JSON usando as novas regras
+                    var produtosCloudflare = JsonSerializer.Deserialize<List<Produto>>(response, opcoesJson);
 
                     if (produtosCloudflare != null && produtosCloudflare.Count > 0)
                     {
@@ -62,11 +128,10 @@ namespace T_PACE
                 }
                 catch (HttpRequestException)
                 {
-                    // Erro de internet ou API fora do ar. Deixamos passar em branco para o caixa funcionar offline.
+                    // Erro de internet ou API fora do ar. Deixamos passar em branco.
                 }
                 catch (Exception ex)
                 {
-                    // Agora se for um erro de código ou banco de dados, o sistema vai te avisar!
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         MessageBox.Show($"Erro interno na sincronização do banco: {ex.Message}", "Erro de Sincronização", MessageBoxButton.OK, MessageBoxImage.Error);
