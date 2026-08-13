@@ -11,7 +11,11 @@
         public string cest { get; set; }
         public decimal aliquotas_imposto { get; set; }
         public decimal quantidade { get; set; }
+        public decimal? valor_promocional { get; set; } // Usando ? porque pode ser nulo
         public string unidade_venda { get; set; }
         public bool em_promocao { get; set; }
+        public string lote { get; set; }
+        public string validade { get; set; }
+        public int id_filial { get; set; }
     }
 }

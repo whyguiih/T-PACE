@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
@@ -8,7 +9,6 @@ namespace T_PACE
 {
     public partial class MainWindow : Window
     {
-        // Variáveis que vão controlar o banco e a lista de itens na tela
         private ProdutoRepository _repositorio;
         public ObservableCollection<ItemCupom> Carrinho { get; set; }
 
@@ -16,25 +16,32 @@ namespace T_PACE
         {
             InitializeComponent();
 
-            // Inicializa as ferramentas
+            try
+            {
+                DatabaseConfig.InicializarBanco();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao criar banco local: {ex.Message}");
+            }
+
             _repositorio = new ProdutoRepository();
             Carrinho = new ObservableCollection<ItemCupom>();
 
-            // Conecta a lista do XAML com a nossa lista do C#
             listaCupom.ItemsSource = Carrinho;
-
-            // "Ouve" as teclas pressionadas no campo de busca
             txtBusca.KeyDown += TxtBusca_KeyDown;
+
+            // ========================================================
+            // CHAMA A SINCRONIZAÇÃO EM SEGUNDO PLANO SEM TRAVAR A TELA
+            // ========================================================
+            Task.Run(async () => await SincronizacaoService.SincronizarProdutosAsync());
         }
 
-        // Função disparada toda vez que uma tecla é apertada na caixa de texto
         private void TxtBusca_KeyDown(object sender, KeyEventArgs e)
         {
-            // Verifica se a tecla foi o "Enter" (gatilho do leitor de código de barras)
             if (e.Key == Key.Enter)
             {
                 string codigo = txtBusca.Text.Trim();
-
                 if (!string.IsNullOrEmpty(codigo))
                 {
                     BiparProduto(codigo);
@@ -42,68 +49,89 @@ namespace T_PACE
             }
         }
 
-        // Função que vai no banco de dados e adiciona à tela
         private void BiparProduto(string codigo)
         {
-            // Vai no SQLite buscar o produto
-            var produto = _repositorio.BuscarPorCodigoDeBarras(codigo);
-
-            if (produto != null)
+            try
             {
-                // Verifica se o produto já foi bipado antes para somar a quantidade
-                var itemExistente = Carrinho.FirstOrDefault(c => c.Codigo == produto.codigo_barras);
+                var produto = _repositorio.BuscarPorCodigoDeBarras(codigo);
 
-                if (itemExistente != null)
+                if (produto != null)
                 {
-                    itemExistente.Quantidade += 1;
-                    itemExistente.Total = itemExistente.Quantidade * itemExistente.PrecoUnitario;
+                    var itemExistente = Carrinho.FirstOrDefault(c => c.Codigo == produto.codigo_barras);
 
-                    // Força a lista visual a se atualizar
-                    var index = Carrinho.IndexOf(itemExistente);
-                    Carrinho[index] = itemExistente;
+                    if (itemExistente != null)
+                    {
+                        itemExistente.Quantidade += 1;
+                        itemExistente.Total = itemExistente.Quantidade * itemExistente.PrecoUnitario;
+                    }
+                    else
+                    {
+                        Carrinho.Add(new ItemCupom
+                        {
+                            Codigo = produto.codigo_barras,
+                            Descricao = produto.nome,
+                            Quantidade = 1,
+                            PrecoUnitario = produto.preco_venda,
+                            Total = produto.preco_venda
+                        });
+                    }
+
+                    AtualizarTotais();
+                    txtBusca.Clear();
                 }
                 else
                 {
-                    // Se for a primeira vez, cria uma nova linha no carrinho
-                    Carrinho.Add(new ItemCupom
-                    {
-                        Codigo = produto.codigo_barras,
-                        Descricao = produto.nome,
-                        Quantidade = 1,
-                        PrecoUnitario = produto.preco_venda,
-                        Total = produto.preco_venda
-                    });
+                    MessageBox.Show("Produto não cadastrado!", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    txtBusca.SelectAll();
                 }
-
-                AtualizarTotais();
-
-                // Limpa o campo para o próximo bipe
-                txtBusca.Clear();
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("Produto não encontrado no banco de dados!", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
-                txtBusca.SelectAll(); // Seleciona o texto errado para o usuário apagar rápido
+                MessageBox.Show($"Produto inexistente", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        // Função para recalcular o valor gigante ali de baixo
         private void AtualizarTotais()
         {
             decimal subtotal = Carrinho.Sum(i => i.Total);
-
-            // Atualiza o textblock gigante no canto inferior direito
             txtTotal.Text = $"R$ {subtotal:N2}";
         }
     }
 
-    // Classe molde que representa cada linha visual do nosso Cupom
-    public class ItemCupom
+    // CORREÇÃO: Implementado INotifyPropertyChanged para atualizar a UI ao somar itens
+    public class ItemCupom : INotifyPropertyChanged
     {
+        private int _quantidade;
+        private decimal _total;
+
         public string Codigo { get; set; }
         public string Descricao { get; set; }
-        public int Quantidade { get; set; }
         public decimal PrecoUnitario { get; set; }
-        public decimal Total { get; set; }
+
+        public int Quantidade
+        {
+            get => _quantidade;
+            set
+            {
+                _quantidade = value;
+                OnPropertyChanged(nameof(Quantidade));
+            }
+        }
+
+        public decimal Total
+        {
+            get => _total;
+            set
+            {
+                _total = value;
+                OnPropertyChanged(nameof(Total));
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }
