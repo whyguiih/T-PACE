@@ -13,7 +13,6 @@ namespace T_PACE
         private ProdutoRepository _repositorio;
         public ObservableCollection<ItemCupom> Carrinho { get; set; }
 
-        // Controle de desconto manual da venda atual (para o atalho F5 no futuro)
         private decimal _descontoManualVenda = 0m;
 
         public MainWindow()
@@ -35,7 +34,6 @@ namespace T_PACE
             listaCupom.ItemsSource = Carrinho;
             txtBusca.KeyDown += TxtBusca_KeyDown;
 
-            // Sincroniza em segundo plano
             Task.Run(async () => await SincronizacaoService.SincronizarProdutosAsync());
         }
 
@@ -59,11 +57,9 @@ namespace T_PACE
 
                 if (produto != null)
                 {
-                    // Lógica de cálculo de Promoção
                     decimal precoCheio = produto.preco_venda;
                     decimal descontoDoItem = 0m;
 
-                    // Se o produto estiver em promoção e o valor promocional for menor que o valor original
                     if (produto.em_promocao && produto.valor_promocional.HasValue && produto.valor_promocional.Value > 0 && produto.valor_promocional.Value < precoCheio)
                     {
                         descontoDoItem = precoCheio - produto.valor_promocional.Value;
@@ -71,7 +67,6 @@ namespace T_PACE
 
                     decimal precoCobrado = precoCheio - descontoDoItem;
 
-                    // Verifica se já bipou esse produto antes
                     var itemExistente = Carrinho.FirstOrDefault(c => c.Codigo == produto.codigo_barras);
 
                     if (itemExistente != null)
@@ -86,25 +81,16 @@ namespace T_PACE
                             Codigo = produto.codigo_barras,
                             Descricao = produto.nome,
                             Quantidade = 1,
-                            PrecoUnitario = precoCheio, // A lista sempre mostra o preço "tabela" unitário
-                            DescontoUnitario = descontoDoItem, // Memoriza o desconto para somar lá embaixo
-                            Total = precoCobrado // O total cobrado já vai para a lista com o desconto
+                            PrecoUnitario = precoCheio,
+                            DescontoUnitario = descontoDoItem,
+                            Total = precoCobrado
                         });
                     }
 
-                    // Atualiza os detalhes visuais do último produto passado
+                    // Atualiza os detalhes visuais de forma limpa, sem o texto "(Promoção)"
                     txtUltimoNome.Text = produto.nome;
                     txtUltimoDetalhes.Text = $"Cód: {produto.codigo_barras}  |  Qtd: 1 un";
-
-                    // Se teve desconto, avisa na tela do lado direito
-                    if (descontoDoItem > 0)
-                    {
-                        txtUltimoPreco.Text = $"R$ {precoCobrado:N2}  (Promoção)";
-                    }
-                    else
-                    {
-                        txtUltimoPreco.Text = $"R$ {precoCobrado:N2}";
-                    }
+                    txtUltimoPreco.Text = $"R$ {precoCobrado:N2}";
 
                     AtualizarTotais();
                     txtBusca.Clear();
@@ -123,19 +109,11 @@ namespace T_PACE
 
         private void AtualizarTotais()
         {
-            // O Subtotal é a soma de todos os produtos multiplicados pelo preço CHEIO
             decimal subtotalBruto = Carrinho.Sum(i => i.PrecoUnitario * i.Quantidade);
-
-            // Os Descontos somam as promoções de cada item multiplicadas pela quantidade
             decimal descontosDePromocoes = Carrinho.Sum(i => i.DescontoUnitario * i.Quantidade);
-
-            // Soma as promoções automáticas + qualquer desconto manual que o caixa der
             decimal descontosTotais = descontosDePromocoes + _descontoManualVenda;
-
-            // O Total que o cliente realmente vai pagar
             decimal totalAPagar = subtotalBruto - descontosTotais;
 
-            // Atualiza os textos na interface
             txtSubtotal.Text = $"R$ {subtotalBruto:N2}";
             txtDesconto.Text = $"- R$ {descontosTotais:N2}";
             txtTotal.Text = $"R$ {totalAPagar:N2}";
@@ -147,10 +125,10 @@ namespace T_PACE
         private int _quantidade;
         private decimal _total;
 
-        public string Codigo { get; set; }
-        public string Descricao { get; set; }
+        public string Codigo { get; set; } = string.Empty;
+        public string Descricao { get; set; } = string.Empty;
         public decimal PrecoUnitario { get; set; }
-        public decimal DescontoUnitario { get; set; } // Nova propriedade guardando a diferença
+        public decimal DescontoUnitario { get; set; }
 
         public int Quantidade
         {
@@ -172,7 +150,8 @@ namespace T_PACE
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
+
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

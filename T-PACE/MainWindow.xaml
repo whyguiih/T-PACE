@@ -8,15 +8,13 @@
         ResizeMode="NoResize"
         FocusManager.FocusedElement="{Binding ElementName=txtBusca}">
 
-    <!-- Recursos de Estilo Monocromático -->
-    <Window.Resources>11
-
-        <Style TargetType="ListBoxItem">
+    <Window.Resources>
+        <Style TargetType="{x:Type ListBoxItem}">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
+                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
                         <Border x:Name="Bd" Background="Transparent" CornerRadius="8" Margin="0,0,0,10" SnapsToDevicePixels="true">
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
@@ -33,10 +31,10 @@
             </Setter>
         </Style>
 
-        <Style TargetType="Button">
+        <Style TargetType="{x:Type Button}">
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
+                    <ControlTemplate TargetType="{x:Type Button}">
                         <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" SnapsToDevicePixels="true">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
@@ -65,7 +63,6 @@
         </LinearGradientBrush>
     </Window.Resources>
 
-    <!-- Fundo Roxo Profundo -->
     <Window.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#5E3A7D" Offset="0.0"/>
@@ -80,7 +77,6 @@
             <RowDefinition Height="60"/>
         </Grid.RowDefinitions>
 
-        <!-- ================= CABEÇALHO (ROW 0) ================= -->
         <Border Grid.Row="0" Background="{StaticResource GlassPane}" Padding="30,0" BorderBrush="{StaticResource GlassBorder}" BorderThickness="0,0,0,2">
             <Border.Effect>
                 <DropShadowEffect Color="#2A1143" Opacity="0.5" BlurRadius="25" ShadowDepth="4"/>
@@ -103,14 +99,12 @@
             </Grid>
         </Border>
 
-        <!-- ================= ÁREA DE TRABALHO (ROW 1) ================= -->
         <Grid Grid.Row="1" Margin="30,30,30,20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="6.5*" />
                 <ColumnDefinition Width="3.5*" />
             </Grid.ColumnDefinitions>
 
-            <!-- LADO ESQUERDO: CUPOM FISCAL -->
             <Border Grid.Column="0" Background="{StaticResource GlassPane}" Margin="0,0,25,0" Padding="30" CornerRadius="12" BorderBrush="{StaticResource GlassBorder}" BorderThickness="1.5">
                 <Border.Effect>
                     <DropShadowEffect Color="#2A1143" Opacity="0.7" BlurRadius="40" ShadowDepth="12" Direction="270"/>
@@ -123,10 +117,8 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- ID do Pedido -->
                     <TextBlock Grid.Row="0" Text="Pedido #10405" FontSize="18" FontWeight="Black" Foreground="#5E3A7D" Margin="0,0,0,15"/>
 
-                    <!-- Campo de Pesquisa -->
                     <Border Grid.Row="1" BorderBrush="#88FFFFFF" BorderThickness="2" CornerRadius="8" Background="#99F8F3FC" Padding="15,10">
                         <Border.Effect>
                             <DropShadowEffect Color="#2A1143" Opacity="0.15" BlurRadius="10" ShadowDepth="3"/>
@@ -135,7 +127,7 @@
                             <TextBlock Text="Bipe o código do produto ou digite o nome..." FontSize="18" Foreground="#5E3A7D" 
                                        IsHitTestVisible="False" VerticalAlignment="Center" Margin="15,0,0,0" FontWeight="Medium">
                                 <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
+                                    <Style TargetType="{x:Type TextBlock}">
                                         <Setter Property="Visibility" Value="Hidden"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Text, ElementName=txtBusca}" Value="">
@@ -152,7 +144,6 @@
                         </Grid>
                     </Border>
 
-                    <!-- Cabeçalho do Cupom -->
                     <Border Grid.Row="2" Margin="5,20,5,10" Padding="10,0,10,10" BorderBrush="#66D6C4E8" BorderThickness="0,0,0,1.5">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -170,7 +161,6 @@
                         </Grid>
                     </Border>
 
-                    <!-- Lista de Produtos Adicionados (Ligação Dinâmica) -->
                     <ListBox x:Name="listaCupom" Grid.Row="3" BorderThickness="0" Background="Transparent" 
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
                         <ListBox.ItemTemplate>
@@ -198,7 +188,6 @@
                 </Grid>
             </Border>
 
-            <!-- LADO DIREITO: INFORMAÇÕES DE DESTAQUE E FECHAMENTO -->
             <Border Grid.Column="1" Background="{StaticResource GlassPane}" CornerRadius="12" BorderBrush="{StaticResource GlassBorder}" BorderThickness="1.5">
                 <Border.Effect>
                     <DropShadowEffect Color="#2A1143" Opacity="0.7" BlurRadius="40" ShadowDepth="12" Direction="270"/>
@@ -209,33 +198,29 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Destaque: Último Item Adicionado -->
                     <Grid Grid.Row="0" Margin="35">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Placeholder de Imagem -->
                         <Grid Grid.Row="0" Margin="0,0,0,25">
                             <Rectangle Fill="#33D6C4E8" Stroke="#66D6C4E8" StrokeThickness="2" StrokeDashArray="4 4" RadiusX="8" RadiusY="8"/>
                             <TextBlock Text="FOTO DO PRODUTO" Foreground="#885E3A7D" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
 
-                        <!-- Informações do Item dinâmicas -->
                         <Viewbox Grid.Row="1" Stretch="Uniform" HorizontalAlignment="Left" MaxHeight="100">
                             <StackPanel>
-                                <TextBlock x:Name="txtUltimoNome" Text=" " FontSize="24" FontWeight="Black" Foreground="#2A1143" Margin="0,0,0,5" TextWrapping="Wrap" MaxWidth="300"/>
+                                <!-- MaxWidth aumentado para 550 para o texto fluir sem quebrar muito cedo -->
+                                <TextBlock x:Name="txtUltimoNome" Text=" " FontSize="24" FontWeight="Black" Foreground="#2A1143" Margin="0,0,0,5" TextWrapping="Wrap" MaxWidth="550"/>
                                 <TextBlock x:Name="txtUltimoDetalhes" Text="Cód: ---  |  Qtd: --" FontSize="16" FontWeight="Bold" Foreground="#5E3A7D" Margin="0,0,0,10"/>
                                 <TextBlock x:Name="txtUltimoPreco" Text="R$ 0,00" FontSize="32" FontWeight="Black" Foreground="#A45FCE"/>
                             </StackPanel>
                         </Viewbox>
                     </Grid>
 
-                    <!-- Área de Fechamento -->
                     <Border Grid.Row="1" Background="#CCF8F3FC" Padding="30" CornerRadius="0,0,12,12" BorderBrush="#44D6C4E8" BorderThickness="0,1.5,0,0">
                         <StackPanel>
-                            <!-- Dados Financeiros Dinâmicos -->
                             <Grid Margin="0,0,0,15">
                                 <TextBlock Text="Subtotal da Venda" FontSize="16" FontWeight="Bold" Foreground="#5E3A7D"/>
                                 <TextBlock x:Name="txtSubtotal" Text="R$ 0,00" FontSize="16" FontWeight="Bold" Foreground="#2A1143" HorizontalAlignment="Right"/>
@@ -247,7 +232,6 @@
 
                             <Border BorderBrush="#44D6C4E8" BorderThickness="0,1.5,0,0" Margin="0,0,0,20"/>
 
-                            <!-- Total Final -->
                             <Grid Margin="0,0,0,30">
                                 <TextBlock Text="TOTAL" FontSize="22" FontWeight="Black" Foreground="#2A1143" VerticalAlignment="Bottom" Margin="0,0,0,5"/>
                                 <Viewbox MaxHeight="55" HorizontalAlignment="Right" Margin="80,0,0,0">
@@ -255,7 +239,6 @@
                                 </Viewbox>
                             </Grid>
 
-                            <!-- Botão de Ação -->
                             <Button x:Name="btnFinalizar" Cursor="Hand" BorderThickness="0" Padding="0,20" Background="#A45FCE" Foreground="#F8F3FC">
                                 <Button.Effect>
                                     <DropShadowEffect Color="#2A1143" Opacity="0.5" BlurRadius="20" ShadowDepth="6" Direction="270"/>
@@ -271,7 +254,6 @@
             </Border>
         </Grid>
 
-        <!-- ================= RODAPÉ ================= -->
         <Border Grid.Row="2" Background="#44F8F3FC" BorderBrush="#44D6C4E8" BorderThickness="0,1.5,0,0" Padding="10">
             <WrapPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="[ F2 ] Receber Venda" Foreground="#F8F3FC" FontSize="14" FontWeight="Bold" Margin="15,5"/>
