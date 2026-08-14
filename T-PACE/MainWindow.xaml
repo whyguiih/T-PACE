@@ -9,7 +9,7 @@
         FocusManager.FocusedElement="{Binding ElementName=txtBusca}">
 
     <!-- Recursos de Estilo Monocromático -->
-    <Window.Resources>
+    <Window.Resources>11
 
         <Style TargetType="ListBoxItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
