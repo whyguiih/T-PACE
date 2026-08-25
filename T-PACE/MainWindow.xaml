@@ -127,7 +127,7 @@
                             <DropShadowEffect Color="#2A1143" Opacity="0.15" BlurRadius="10" ShadowDepth="3"/>
                         </Border.Effect>
                         <Grid>
-                            <TextBlock Text="Bipe o código do produto ou digite o nome..." FontSize="18" Foreground="#5E3A7D" 
+                            <TextBlock Text="Digite o código do produto..." FontSize="18" Foreground="#5E3A7D" 
                                        IsHitTestVisible="False" VerticalAlignment="Center" Margin="15,0,0,0" FontWeight="Medium">
                                 <TextBlock.Style>
                                     <Style TargetType="{x:Type TextBlock}">
@@ -141,7 +141,7 @@
                                 </TextBlock.Style>
                             </TextBlock>
 
-                            <TextBox x:Name="txtBusca" FontSize="22" Padding="15,5" Background="Transparent" BorderThickness="0" Foreground="#2A1143" VerticalContentAlignment="Center" FontWeight="Bold"/>
+                            <TextBox x:Name="txtBusca" FontSize="22" Padding="15,5" Background="Transparent" BorderThickness="0" Foreground="#2A1143" VerticalContentAlignment="Center" FontWeight="Bold" TextChanged="txtBusca_TextChanged"/>
                         </Grid>
                     </Border>
 

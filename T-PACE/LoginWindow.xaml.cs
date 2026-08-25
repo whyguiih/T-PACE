@@ -51,14 +51,12 @@ namespace T_PACE
             {
                 using (var client = new HttpClient())
                 {
-                    // Envia exatamente o formato que o seu api.js espera ler no body.json()
                     var jsonRequest = JsonSerializer.Serialize(new { nome = usuario, senha = senha });
                     var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
                     var response = await client.PostAsync(apiLoginUrl, content);
                     var responseString = await response.Content.ReadAsStringAsync();
 
-                    // Se a API retornar StatusCode 200 (sucesso)
                     if (response.IsSuccessStatusCode)
                     {
                         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -66,25 +64,39 @@ namespace T_PACE
 
                         if (resultado != null && resultado.sucesso)
                         {
-                            // Usuário validado pelo Cloudflare! Agora abrimos a sessão no banco local.
                             using (var conn = new SqliteConnection(DatabaseConfig.ConnectionString))
                             {
                                 conn.Open();
 
+                                // 1. NOVO: Sincroniza o usuário que veio da nuvem com o banco local
+                                // Assim o banco local sempre reconhece o ID do usuário (evita erro de Foreign Key)
+                                conn.Execute(@"
+                                    INSERT INTO tb_usuarios (id, nome, nivel_acesso) 
+                                    VALUES (@Id, @Nome, @NivelAcesso)
+                                    ON CONFLICT(id) DO UPDATE SET 
+                                        nome = excluded.nome,
+                                        nivel_acesso = excluded.nivel_acesso;",
+                                    new
+                                    {
+                                        Id = resultado.usuario.id,
+                                        Nome = resultado.usuario.nome,
+                                        NivelAcesso = resultado.usuario.nivel_acesso
+                                    });
+
+                                // 2. Registra os dados da sessão
                                 Session.CurrentUserId = resultado.usuario.id;
                                 Session.CurrentUserName = resultado.usuario.nome;
 
                                 var now = DateTime.Now;
                                 long sessaoId = conn.ExecuteScalar<long>(
-                                    @"INSERT INTO tb_sessao_caixa (id_caixa, id_usuario, data_abertura, valor_fundo_troco, status) 
-                                      VALUES (@IdCaixa, @IdUsuario, @DataAbertura, @ValorFundoTroco, @Status); 
-                                      SELECT last_insert_rowid();",
+                                    @"INSERT INTO tb_sessao_caixa (id_caixa, id_usuario, data_abertura, valor_fundo_troco, status)
+                                       VALUES (@IdCaixa, @IdUsuario, @DataAbertura, @ValorFundoTroco, @Status);
+                                       SELECT last_insert_rowid();",
                                     new { IdCaixa = 1, IdUsuario = Session.CurrentUserId, DataAbertura = now, ValorFundoTroco = 0m, Status = 1 });
 
                                 Session.CurrentSessaoCaixaId = Convert.ToInt32(sessaoId);
                             }
 
-                            // Isso fechará a janela atual e devolverá "true" para o App.xaml.cs abrir o Caixa principal
                             DialogResult = true;
                         }
                         else
@@ -95,15 +107,15 @@ namespace T_PACE
                     }
                     else
                     {
-                        // Cai aqui se a API retornar StatusCode 401 (Senha errada)
                         txtMensagem.Text = "Usuário ou senha incorretos.";
                         btnOk.IsEnabled = true;
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                txtMensagem.Text = "Erro de conexão com o Cloudflare.";
+                // NOVO: Mostra o erro exato na tela (seja de banco ou de rede)
+                txtMensagem.Text = $"Erro: {ex.Message}";
                 btnOk.IsEnabled = true;
             }
         }

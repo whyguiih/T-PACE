@@ -206,6 +206,11 @@ namespace T_PACE
             txtDesconto.Text = $"- R$ {descontosTotais:N2}";
             txtTotal.Text = $"R$ {totalAPagar:N2}";
         }
+
+        private void txtBusca_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+
+        }
     }
 
     public class ItemCupom : INotifyPropertyChanged
