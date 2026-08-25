@@ -70,6 +70,7 @@
         </LinearGradientBrush>
     </Window.Background>
 
+    <!-- MAIN GRID -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="80"/>
@@ -77,13 +78,13 @@
             <RowDefinition Height="60"/>
         </Grid.RowDefinitions>
 
+        <!-- CABEÇALHO -->
         <Border Grid.Row="0" Background="{StaticResource GlassPane}" Padding="30,0" BorderBrush="{StaticResource GlassBorder}" BorderThickness="0,0,0,2">
             <Border.Effect>
                 <DropShadowEffect Color="#2A1143" Opacity="0.5" BlurRadius="25" ShadowDepth="4"/>
             </Border.Effect>
             <Grid>
                 <TextBlock Text="T-PACE  |  PDV" Foreground="#2A1143" FontSize="22" FontWeight="Black" VerticalAlignment="Center"/>
-
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Border Background="#1AA45FCE" Padding="12,6" CornerRadius="8" Margin="0,0,20,0" BorderBrush="#44A45FCE" BorderThickness="1.5">
                         <StackPanel Orientation="Horizontal">
@@ -91,7 +92,6 @@
                             <TextBlock Text="Caixa Aberto" Foreground="#A45FCE" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
-                    <!-- Adicionando x:Name nos itens do Perfil -->
                     <Border Width="35" Height="35" CornerRadius="8" Background="#A45FCE" Margin="0,0,15,0" BorderBrush="#F8F3FC" BorderThickness="2">
                         <TextBlock x:Name="txtIniciaisUsuario" Text="US" Foreground="#F8F3FC" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
@@ -100,12 +100,14 @@
             </Grid>
         </Border>
 
+        <!-- CONTEÚDO PRINCIPAL -->
         <Grid Grid.Row="1" Margin="30,30,30,20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="6.5*" />
                 <ColumnDefinition Width="3.5*" />
             </Grid.ColumnDefinitions>
 
+            <!-- LADO ESQUERDO: CUPOM FISCAL -->
             <Border Grid.Column="0" Background="{StaticResource GlassPane}" Margin="0,0,25,0" Padding="30" CornerRadius="12" BorderBrush="{StaticResource GlassBorder}" BorderThickness="1.5">
                 <Border.Effect>
                     <DropShadowEffect Color="#2A1143" Opacity="0.7" BlurRadius="40" ShadowDepth="12" Direction="270"/>
@@ -139,9 +141,7 @@
                                 </TextBlock.Style>
                             </TextBlock>
 
-                            <TextBox x:Name="txtBusca" FontSize="22" Padding="15,5" 
-                                     Background="Transparent" BorderThickness="0" Foreground="#2A1143"
-                                     VerticalContentAlignment="Center" FontWeight="Bold"/>
+                            <TextBox x:Name="txtBusca" FontSize="22" Padding="15,5" Background="Transparent" BorderThickness="0" Foreground="#2A1143" VerticalContentAlignment="Center" FontWeight="Bold"/>
                         </Grid>
                     </Border>
 
@@ -162,8 +162,7 @@
                         </Grid>
                     </Border>
 
-                    <ListBox x:Name="listaCupom" Grid.Row="3" BorderThickness="0" Background="Transparent" 
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListBox x:Name="listaCupom" Grid.Row="3" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border Padding="10,12">
@@ -175,7 +174,6 @@
                                             <ColumnDefinition Width="1.5*"/>
                                             <ColumnDefinition Width="2*"/>
                                         </Grid.ColumnDefinitions>
-
                                         <TextBlock Grid.Column="0" Text="{Binding Codigo}" Foreground="#5E3A7D" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="1" Text="{Binding Descricao}" FontWeight="Bold" FontSize="16" Foreground="#2A1143" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" VerticalAlignment="Center" Margin="0,0,15,0"/>
                                         <TextBlock Grid.Column="2" Text="{Binding Quantidade}" Foreground="#2A1143" FontSize="16" FontWeight="Black" TextAlignment="Center" VerticalAlignment="Center"/>
@@ -189,6 +187,7 @@
                 </Grid>
             </Border>
 
+            <!-- LADO DIREITO: RESUMO -->
             <Border Grid.Column="1" Background="{StaticResource GlassPane}" CornerRadius="12" BorderBrush="{StaticResource GlassBorder}" BorderThickness="1.5">
                 <Border.Effect>
                     <DropShadowEffect Color="#2A1143" Opacity="0.7" BlurRadius="40" ShadowDepth="12" Direction="270"/>
@@ -204,15 +203,12 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-
                         <Grid Grid.Row="0" Margin="0,0,0,25">
                             <Rectangle Fill="#33D6C4E8" Stroke="#66D6C4E8" StrokeThickness="2" StrokeDashArray="4 4" RadiusX="8" RadiusY="8"/>
                             <TextBlock Text="FOTO DO PRODUTO" Foreground="#885E3A7D" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
-
                         <Viewbox Grid.Row="1" Stretch="Uniform" HorizontalAlignment="Left" MaxHeight="100">
                             <StackPanel>
-                                <!-- MaxWidth aumentado para 550 para o texto fluir sem quebrar muito cedo -->
                                 <TextBlock x:Name="txtUltimoNome" Text=" " FontSize="24" FontWeight="Black" Foreground="#2A1143" Margin="0,0,0,5" TextWrapping="Wrap" MaxWidth="550"/>
                                 <TextBlock x:Name="txtUltimoDetalhes" Text="Cód: ---  |  Qtd: --" FontSize="16" FontWeight="Bold" Foreground="#5E3A7D" Margin="0,0,0,10"/>
                                 <TextBlock x:Name="txtUltimoPreco" Text="R$ 0,00" FontSize="32" FontWeight="Black" Foreground="#A45FCE"/>
@@ -230,16 +226,13 @@
                                 <TextBlock Text="Descontos Aplicados" FontSize="16" FontWeight="Bold" Foreground="#5E3A7D"/>
                                 <TextBlock x:Name="txtDesconto" Text="- R$ 0,00" FontSize="16" FontWeight="Bold" Foreground="#A45FCE" HorizontalAlignment="Right"/>
                             </Grid>
-
                             <Border BorderBrush="#44D6C4E8" BorderThickness="0,1.5,0,0" Margin="0,0,0,20"/>
-
                             <Grid Margin="0,0,0,30">
                                 <TextBlock Text="TOTAL" FontSize="22" FontWeight="Black" Foreground="#2A1143" VerticalAlignment="Bottom" Margin="0,0,0,5"/>
                                 <Viewbox MaxHeight="55" HorizontalAlignment="Right" Margin="80,0,0,0">
                                     <TextBlock x:Name="txtTotal" Text="R$ 0,00" FontWeight="Black" Foreground="#A45FCE"/>
                                 </Viewbox>
                             </Grid>
-
                             <Button x:Name="btnFinalizar" Cursor="Hand" BorderThickness="0" Padding="0,20" Background="#A45FCE" Foreground="#F8F3FC">
                                 <Button.Effect>
                                     <DropShadowEffect Color="#2A1143" Opacity="0.5" BlurRadius="20" ShadowDepth="6" Direction="270"/>
@@ -255,6 +248,7 @@
             </Border>
         </Grid>
 
+        <!-- RODAPÉ -->
         <Border Grid.Row="2" Background="#44F8F3FC" BorderBrush="#44D6C4E8" BorderThickness="0,1.5,0,0" Padding="10">
             <WrapPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="[ F2 ] Receber Venda" Foreground="#F8F3FC" FontSize="14" FontWeight="Bold" Margin="15,5"/>
@@ -264,5 +258,31 @@
                 <TextBlock Text="[ F10 ] Sair do Caixa" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5"/>
             </WrapPanel>
         </Border>
+
+        <!-- OVERLAY DE CANCELAMENTO (F3) -->
+        <Border x:Name="OverlayCancelamento" Grid.RowSpan="3" Background="#B21A0A2E" Visibility="Collapsed" Panel.ZIndex="100">
+            <Border Width="450" Height="250" Background="#F8F3FC" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="30">
+                <Border.Effect>
+                    <DropShadowEffect Color="#2A1143" Opacity="0.8" BlurRadius="50" ShadowDepth="10"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="CANCELAR ITEM" Foreground="#D43D3D" FontSize="22" FontWeight="Black" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+                    <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                        <TextBlock Text="Bipe ou digite o código do item a ser cancelado:" Foreground="#5E3A7D" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+                        <TextBox x:Name="txtBuscaCancelamento" FontSize="24" FontWeight="Bold" Foreground="#2A1143" Padding="10,5" Background="#E6E0ED" BorderThickness="0"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="2" Text="[ ESC ] Fechar" Foreground="#885E3A7D" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,15,0,0"/>
+                </Grid>
+            </Border>
+        </Border>
+
     </Grid>
 </Window>

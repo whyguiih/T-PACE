@@ -113,13 +113,13 @@ namespace T_PACE
     public class LoginResponse
     {
         public bool sucesso { get; set; }
-        public UsuarioLogin usuario { get; set; }
+        public UsuarioLogin usuario { get; set; } = new UsuarioLogin();
     }
 
     public class UsuarioLogin
     {
         public int id { get; set; }
-        public string nome { get; set; }
+        public string nome { get; set; } = string.Empty;
         public int nivel_acesso { get; set; }
     }
 

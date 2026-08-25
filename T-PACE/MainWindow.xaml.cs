@@ -23,14 +23,12 @@ namespace T_PACE
             if (!string.IsNullOrEmpty(Session.CurrentUserName))
             {
                 txtNomeUsuario.Text = Session.CurrentUserName;
-                // Pega as duas primeiras letras do nome para a bolinha (ex: Admin -> AD)
                 txtIniciaisUsuario.Text = Session.CurrentUserName.Length > 1
                     ? Session.CurrentUserName.Substring(0, 2).ToUpper()
                     : Session.CurrentUserName.ToUpper();
             }
 
             try
-            // ... restante do código original continua
             {
                 DatabaseConfig.InicializarBanco();
             }
@@ -58,6 +56,10 @@ namespace T_PACE
                     BiparProduto(codigo);
                 }
             }
+            else if (e.Key == Key.F3)
+            {
+                AbrirTelaCancelamento();
+            }
         }
 
         private void BiparProduto(string codigo)
@@ -74,7 +76,6 @@ namespace T_PACE
                     if (produto.em_promocao && produto.valor_promocional.HasValue)
                     {
                         decimal valorPromo = Convert.ToDecimal(produto.valor_promocional.Value);
-
                         if (valorPromo > 0 && valorPromo < precoCheio)
                         {
                             descontoDoItem = precoCheio - valorPromo;
@@ -103,7 +104,6 @@ namespace T_PACE
                         });
                     }
 
-                    // Atualiza os detalhes visuais de forma limpa, sem o texto "(Promoção)"
                     txtUltimoNome.Text = produto.nome;
                     txtUltimoDetalhes.Text = $"Cód: {produto.codigo_barras}  |  Qtd: 1 un";
                     txtUltimoPreco.Text = $"R$ {precoCobrado:N2}";
@@ -120,6 +120,78 @@ namespace T_PACE
             catch (Exception ex)
             {
                 MessageBox.Show($"Erro na busca: {ex.Message}", "Erro Crítico", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ==========================================
+        // LÓGICA DE CANCELAMENTO (F3)
+        // ==========================================
+        private void AbrirTelaCancelamento()
+        {
+            if (Carrinho.Count == 0)
+            {
+                MessageBox.Show("Não há itens no cupom para cancelar.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            OverlayCancelamento.Visibility = Visibility.Visible;
+            txtBuscaCancelamento.Clear();
+            txtBuscaCancelamento.Focus();
+
+            txtBuscaCancelamento.KeyDown -= TxtBuscaCancelamento_KeyDown;
+            txtBuscaCancelamento.KeyDown += TxtBuscaCancelamento_KeyDown;
+        }
+
+        private void TxtBuscaCancelamento_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                string codigo = txtBuscaCancelamento.Text.Trim();
+                if (!string.IsNullOrEmpty(codigo))
+                {
+                    CancelarProduto(codigo);
+                }
+            }
+            else if (e.Key == Key.Escape)
+            {
+                FecharTelaCancelamento();
+            }
+        }
+
+        private void FecharTelaCancelamento()
+        {
+            OverlayCancelamento.Visibility = Visibility.Collapsed;
+            txtBusca.Focus();
+        }
+
+        private void CancelarProduto(string codigo)
+        {
+            var itemExistente = Carrinho.FirstOrDefault(c => c.Codigo == codigo);
+
+            if (itemExistente != null)
+            {
+                itemExistente.Quantidade -= 1;
+
+                if (itemExistente.Quantidade <= 0)
+                {
+                    Carrinho.Remove(itemExistente);
+                }
+                else
+                {
+                    itemExistente.Total = itemExistente.Quantidade * (itemExistente.PrecoUnitario - itemExistente.DescontoUnitario);
+                }
+
+                txtUltimoNome.Text = "ITEM CANCELADO";
+                txtUltimoDetalhes.Text = $"Cód: {codigo} removido";
+                txtUltimoPreco.Text = $"- R$ {itemExistente.PrecoUnitario - itemExistente.DescontoUnitario:N2}";
+
+                AtualizarTotais();
+                FecharTelaCancelamento();
+            }
+            else
+            {
+                MessageBox.Show("Este item não está no cupom atual!", "Erro", MessageBoxButton.OK, MessageBoxImage.Warning);
+                txtBuscaCancelamento.SelectAll();
             }
         }
 
