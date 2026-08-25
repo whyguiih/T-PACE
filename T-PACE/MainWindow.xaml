@@ -91,10 +91,11 @@
                             <TextBlock Text="Caixa Aberto" Foreground="#A45FCE" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
+                    <!-- Adicionando x:Name nos itens do Perfil -->
                     <Border Width="35" Height="35" CornerRadius="8" Background="#A45FCE" Margin="0,0,15,0" BorderBrush="#F8F3FC" BorderThickness="2">
-                        <TextBlock Text="GB" Foreground="#F8F3FC" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="txtIniciaisUsuario" Text="US" Foreground="#F8F3FC" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="Guilherme Brandalize" Foreground="#2A1143" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="txtNomeUsuario" Text="Operador" Foreground="#2A1143" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
                 </StackPanel>
             </Grid>
         </Border>

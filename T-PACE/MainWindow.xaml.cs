@@ -19,7 +19,18 @@ namespace T_PACE
         {
             InitializeComponent();
 
+            // ATUALIZANDO O PERFIL VISUAL
+            if (!string.IsNullOrEmpty(Session.CurrentUserName))
+            {
+                txtNomeUsuario.Text = Session.CurrentUserName;
+                // Pega as duas primeiras letras do nome para a bolinha (ex: Admin -> AD)
+                txtIniciaisUsuario.Text = Session.CurrentUserName.Length > 1
+                    ? Session.CurrentUserName.Substring(0, 2).ToUpper()
+                    : Session.CurrentUserName.ToUpper();
+            }
+
             try
+            // ... restante do código original continua
             {
                 DatabaseConfig.InicializarBanco();
             }

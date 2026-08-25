@@ -72,6 +72,7 @@ namespace T_PACE
                                 conn.Open();
 
                                 Session.CurrentUserId = resultado.usuario.id;
+                                Session.CurrentUserName = resultado.usuario.nome;
 
                                 var now = DateTime.Now;
                                 long sessaoId = conn.ExecuteScalar<long>(
@@ -125,6 +126,7 @@ namespace T_PACE
     public static class Session
     {
         public static int CurrentUserId { get; set; } = 0;
+        public static string CurrentUserName { get; set; } = string.Empty; // NOVO
         public static int CurrentSessaoCaixaId { get; set; } = 0;
     }
 }
