@@ -75,8 +75,8 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Orientation="Vertical" Margin="0,6,0,14">
-                        <TextBlock Text="Usuário (e-mail)" Foreground="#2A1143" FontSize="15" FontWeight="SemiBold" />
-                        <TextBox x:Name="txtEmail" Height="50" FontSize="16" HorizontalAlignment="Stretch" Padding="8" />
+                        <TextBlock Text="Usuário" Foreground="#2A1143" FontSize="15" FontWeight="SemiBold" />
+                        <TextBox x:Name="txtUsuario" Height="50" FontSize="16" HorizontalAlignment="Stretch" Padding="8" />
                     </StackPanel>
 
                     <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,6,0,14">

@@ -1,19 +1,16 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
+﻿using System.Windows;
 
 namespace T_PACE
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
     public partial class App : Application
     {
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
-            // Garantir que o banco exista antes do login
+            // 1. Desliga o comportamento automático de fechar o app ao fechar o Login
+            this.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
             try
             {
                 DatabaseConfig.InicializarBanco();
@@ -31,6 +28,9 @@ namespace T_PACE
             if (ok == true)
             {
                 var main = new MainWindow();
+                this.MainWindow = main;
+                // 2. Devolve o comportamento normal (o app vai fechar quando a tela do PDV for fechada)
+                this.ShutdownMode = ShutdownMode.OnMainWindowClose;
                 main.Show();
             }
             else
@@ -39,5 +39,4 @@ namespace T_PACE
             }
         }
     }
-
 }
