@@ -118,7 +118,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="Pedido #10405" FontSize="18" FontWeight="Black" Foreground="#5E3A7D" Margin="0,0,0,15"/>
+                    <TextBlock Grid.Row="0" Text="Loja Tal" FontSize="18" FontWeight="Black" Foreground="#5E3A7D" Margin="0,0,0,15"/>
 
                     <Border Grid.Row="1" BorderBrush="#88FFFFFF" BorderThickness="2" CornerRadius="8" Background="#99F8F3FC" Padding="15,10">
                         <Border.Effect>
