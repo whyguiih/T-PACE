@@ -71,9 +71,14 @@ namespace T_PACE
                     decimal precoCheio = produto.preco_venda;
                     decimal descontoDoItem = 0m;
 
-                    if (produto.em_promocao && produto.valor_promocional.HasValue && produto.valor_promocional.Value > 0 && produto.valor_promocional.Value < precoCheio)
+                    if (produto.em_promocao && produto.valor_promocional.HasValue)
                     {
-                        descontoDoItem = precoCheio - produto.valor_promocional.Value;
+                        decimal valorPromo = Convert.ToDecimal(produto.valor_promocional.Value);
+
+                        if (valorPromo > 0 && valorPromo < precoCheio)
+                        {
+                            descontoDoItem = precoCheio - valorPromo;
+                        }
                     }
 
                     decimal precoCobrado = precoCheio - descontoDoItem;

@@ -10,7 +10,7 @@ using Dapper;
 
 namespace T_PACE
 {
-    // NOVO: Conversor universal de Decimais (Resolve o erro do Custo/Preço_Venda)
+    // Conversor universal de Decimais
     public class DecimalConverter : JsonConverter<decimal>
     {
         public override decimal Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -56,25 +56,35 @@ namespace T_PACE
         }
     }
 
-    public class IntBoolConverter : JsonConverter<int>
+    // NOVO: Conversor para Boolean (Converte 0/1 do JSON para false/true)
+    public class BooleanConverter : JsonConverter<bool>
     {
-        public override int Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override bool Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            if (reader.TokenType == JsonTokenType.True) return 1;
-            if (reader.TokenType == JsonTokenType.False) return 0;
-            if (reader.TokenType == JsonTokenType.Number) return reader.GetInt32();
+            // Se já vier como booleano
+            if (reader.TokenType == JsonTokenType.True) return true;
+            if (reader.TokenType == JsonTokenType.False) return false;
+
+            // Se vier como número (ex: 0 ou 1)
+            if (reader.TokenType == JsonTokenType.Number)
+            {
+                return reader.GetInt32() == 1;
+            }
+
+            // Se vier como texto (ex: "0" ou "1")
             if (reader.TokenType == JsonTokenType.String)
             {
                 string valor = reader.GetString();
-                if (valor == "1" || valor?.ToLower() == "true") return 1;
-                return 0;
+                if (valor == "1" || valor?.ToLower() == "true") return true;
+                if (valor == "0" || valor?.ToLower() == "false" || string.IsNullOrWhiteSpace(valor)) return false;
             }
-            return 0;
+
+            return false;
         }
 
-        public override void Write(Utf8JsonWriter writer, int value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, bool value, JsonSerializerOptions options)
         {
-            writer.WriteNumberValue(value);
+            writer.WriteBooleanValue(value);
         }
     }
 
@@ -91,9 +101,9 @@ namespace T_PACE
                     var response = await client.GetStringAsync(apiUrl);
 
                     var opcoesJson = new JsonSerializerOptions();
-                    opcoesJson.Converters.Add(new DecimalConverter()); // Adicionado
+                    opcoesJson.Converters.Add(new DecimalConverter());
                     opcoesJson.Converters.Add(new DoubleNullConverter());
-                    opcoesJson.Converters.Add(new IntBoolConverter());
+                    opcoesJson.Converters.Add(new BooleanConverter()); // NOVO CONVERSOR AQUI
 
                     var produtosCloudflare = JsonSerializer.Deserialize<List<Produto>>(response, opcoesJson);
 

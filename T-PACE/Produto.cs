@@ -11,11 +11,12 @@
         public string cest { get; set; } = string.Empty;
         public decimal aliquotas_imposto { get; set; }
         public decimal quantidade { get; set; }
-        public decimal? valor_promocional { get; set; }
+        public double? valor_promocional { get; set; }
         public string unidade_venda { get; set; } = string.Empty;
-        public bool em_promocao { get; set; }
+        public bool em_promocao { get; set; } // Garantindo que é bool
         public string lote { get; set; } = string.Empty;
         public string validade { get; set; } = string.Empty;
         public int id_filial { get; set; }
+        public decimal quantidade_minima { get; set; }
     }
 }
