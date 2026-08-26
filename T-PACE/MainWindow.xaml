@@ -328,5 +328,30 @@
             </Border>
         </Border>
 
+        <!-- OVERLAY DE DESCONTO GLOBAL (F5) -->
+        <Border x:Name="OverlayDesconto" Grid.RowSpan="3" Background="#B21A0A2E" Visibility="Collapsed" Panel.ZIndex="100">
+            <Border Width="400" Height="250" Background="#F8F3FC" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="30">
+                <Border.Effect>
+                    <DropShadowEffect Color="#2A1143" Opacity="0.8" BlurRadius="50" ShadowDepth="10"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="APLICAR DESCONTO" Foreground="#A45FCE" FontSize="22" FontWeight="Black" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+                    <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                        <TextBlock Text="Valor (R$) ou Porcentagem (%):" Foreground="#5E3A7D" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+                        <TextBox x:Name="txtValorDesconto" FontSize="28" FontWeight="Bold" Foreground="#2A1143" Padding="10,5" Background="#E6E0ED" BorderThickness="0" TextAlignment="Center" PreviewKeyDown="txtValorDesconto_PreviewKeyDown"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="2" Text="[ ESC ] Cancelar   [ ENTER ] Confirmar" Foreground="#885E3A7D" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,15,0,0"/>
+                </Grid>
+            </Border>
+        </Border>
+
     </Grid>
 </Window>

@@ -64,6 +64,10 @@ namespace T_PACE
             {
                 AbrirTelaBusca();
             }
+            else if (e.Key == Key.F5)
+            {
+                AbrirTelaDesconto();
+            }
         }
 
         private void BiparProduto(string codigo)
@@ -289,6 +293,104 @@ namespace T_PACE
 
                 // MAGIA: Reaproveita a mesma função de ler o código de barras!
                 BiparProduto(produtoSelecionado.codigo_barras);
+            }
+        }
+
+        // ==========================================
+        // LÓGICA DE DESCONTO GLOBAL (F5)
+        // ==========================================
+        private void AbrirTelaDesconto()
+        {
+            if (Carrinho.Count == 0)
+            {
+                MessageBox.Show("Adicione itens ao cupom antes de aplicar um desconto.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            OverlayDesconto.Visibility = Visibility.Visible;
+
+            // Se já houver um desconto aplicado antes, mostra ele. Se não, limpa.
+            txtValorDesconto.Text = _descontoManualVenda > 0 ? _descontoManualVenda.ToString("N2") : "";
+            txtValorDesconto.SelectAll(); // Seleciona tudo para o operador sobrescrever fácil
+            txtValorDesconto.Focus();
+        }
+
+        private void FecharTelaDesconto()
+        {
+            OverlayDesconto.Visibility = Visibility.Collapsed;
+            txtBusca.Focus();
+        }
+
+        private void txtValorDesconto_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                FecharTelaDesconto();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Enter)
+            {
+                AplicarDescontoManual();
+                e.Handled = true;
+            }
+        }
+
+        private void AplicarDescontoManual()
+        {
+            string entrada = txtValorDesconto.Text.Trim();
+
+            // Se o operador limpou o campo e deu Enter, removemos o desconto
+            if (string.IsNullOrEmpty(entrada))
+            {
+                _descontoManualVenda = 0m;
+                AtualizarTotais();
+                FecharTelaDesconto();
+                return;
+            }
+
+            // Descobre se o operador digitou o símbolo de %
+            bool isPorcentagem = entrada.Contains("%");
+
+            // Limpa a string para pegar só o número puro (tira R$, %, espaços e arruma a vírgula)
+            entrada = entrada.Replace("R$", "").Replace("%", "").Replace(" ", "").Replace(",", ".");
+
+            if (decimal.TryParse(entrada, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal valorDigitado))
+            {
+                // Descobre quanto a venda está custando agora (já abatendo os descontos de promoção)
+                decimal subtotalBruto = Carrinho.Sum(i => i.PrecoUnitario * i.Quantidade);
+                decimal descontosDePromocoes = Carrinho.Sum(i => i.DescontoUnitario * i.Quantidade);
+                decimal totalAtualVenda = subtotalBruto - descontosDePromocoes;
+
+                decimal valorDescontoFinal = 0m;
+
+                if (isPorcentagem)
+                {
+                    // Regra de 3 básica: (Valor Total * Porcentagem) / 100
+                    valorDescontoFinal = totalAtualVenda * (valorDigitado / 100m);
+                }
+                else
+                {
+                    // Se não tem %, é desconto em Reais direto
+                    valorDescontoFinal = valorDigitado;
+                }
+
+                // Trava de segurança: O desconto não pode ser maior que a venda nem negativo
+                if (valorDescontoFinal > totalAtualVenda || valorDescontoFinal < 0)
+                {
+                    MessageBox.Show("O desconto não pode ser negativo ou ultrapassar o valor total da venda!", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    txtValorDesconto.SelectAll();
+                    return;
+                }
+
+                // Aplica na variável global e atualiza a tela
+                _descontoManualVenda = valorDescontoFinal;
+                AtualizarTotais();
+                FecharTelaDesconto();
+            }
+            else
+            {
+                MessageBox.Show("Valor inválido. Digite um número (ex: 10,50) ou uma porcentagem (ex: 15%).", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                txtValorDesconto.SelectAll();
             }
         }
 
