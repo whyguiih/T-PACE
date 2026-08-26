@@ -54,7 +54,8 @@ namespace T_PACE
             Task.Run(async () => await SincronizacaoService.SincronizarProdutosAsync());
         }
 
-        private void TxtBusca_KeyDown(object sender, KeyEventArgs e)
+        // Adicionamos a palavra 'async' aqui na assinatura do método
+        private async void TxtBusca_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
@@ -79,6 +80,11 @@ namespace T_PACE
             else if (e.Key == Key.F2)
             {
                 AbrirTelaPagamento();
+            }
+            // NOVO: Atalho F9 (Sair do Caixa e Sincronizar)
+            else if (e.Key == Key.F9)
+            {
+                await SairDoCaixa();
             }
         }
 
@@ -615,6 +621,57 @@ namespace T_PACE
             catch (Exception ex)
             {
                 MessageBox.Show($"Erro ao concluir venda.", "Erro Crítico", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ==========================================
+        // LÓGICA DE SAIR DO CAIXA (F19)
+        // ==========================================
+        private async Task SairDoCaixa()
+        {
+            // Pergunta para evitar acidentes
+            if (MessageBox.Show("Tem certeza que deseja fechar o caixa e sair do sistema?", "Sair do Caixa", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            {
+                // 1. Bloqueia a tela e avisa o operador
+                this.IsEnabled = false;
+                txtUltimoNome.Text = "Sincronizando com a nuvem...";
+                txtUltimoDetalhes.Text = "Aguarde enquanto as vendas pendentes são salvas.";
+                txtUltimoPreco.Text = "";
+
+                // 2. Força o envio de qualquer venda feita sem internet que tenha ficado para trás
+                await SincronizacaoService.SincronizarVendasPendentesAsync();
+
+                // 3. Limpa a Sessão de quem estava logado
+                Session.CurrentUserId = 0;
+                Session.CurrentUserName = string.Empty;
+                Session.CurrentSessaoCaixaId = 0;
+
+                // 4. Avisa o Windows que não é para fechar o aplicativo quando essa tela sumir
+                Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+                // Esconde a tela do PDV
+                this.Hide();
+
+                // 5. Chama a tela de Login novamente
+                var login = new LoginWindow();
+                bool? ok = login.ShowDialog();
+
+                if (ok == true)
+                {
+                    // Se logou com sucesso de novo (mesmo operador ou outro), cria um PDV novinho
+                    var novaMain = new MainWindow();
+                    Application.Current.MainWindow = novaMain;
+                    Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
+                    novaMain.Show();
+                }
+                else
+                {
+                    // Se fechou a tela de login (apertou no X ou em Sair), desliga o app inteiro
+                    Application.Current.Shutdown();
+                }
+
+                // Remove o PDV velho da memória
+                this.Close();
             }
         }
     }

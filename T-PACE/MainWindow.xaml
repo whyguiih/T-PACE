@@ -255,7 +255,7 @@
                 <TextBlock Text="[ F3 ] Cancelar Item" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5"/>
                 <TextBlock Text="[ F4 ] Buscar Produto" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5"/>
                 <TextBlock Text="[ F5 ] Aplicar Desconto" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5"/>
-                <TextBlock Text="[ F10 ] Sair do Caixa" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5"/>
+                <TextBlock Text="[ F9 ] Sair do Caixa" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5"/>
             </WrapPanel>
         </Border>
 
