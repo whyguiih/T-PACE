@@ -152,36 +152,62 @@ namespace T_PACE
             }
         }
         // NOVO MÉTOD: Envia a venda para a nuvem
-        public static async Task EnviarVendaParaNuvemAsync(object vendaObj)
+        // NOVO MÉTOD: Varre o banco local e envia as vendas pendentes para a nuvem
+        public static async Task SincronizarVendasPendentesAsync()
         {
             try
             {
-                using (var client = new HttpClient())
+                using (var conn = new SqliteConnection(DatabaseConfig.ConnectionString))
                 {
-                    // Transforma o objeto C# num JSON limpinho
-                    string json = JsonSerializer.Serialize(vendaObj);
-                    var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                    conn.Open();
 
-                    // Dispara pra nuvem
-                    var response = await client.PostAsync("https://tpace-api.whyguiih.workers.dev/api/app/vendas", content);
+                    // Pega todas as vendas que ainda não subiram (0 ou nulo)
+                    var vendasPendentes = conn.Query("SELECT * FROM tb_vendas WHERE sincronizado = 0 OR sincronizado IS NULL").ToList();
 
-                    // Se a API não devolver "201 Created" ou "200 OK", nós mostramos o erro!
-                    if (!response.IsSuccessStatusCode)
+                    if (vendasPendentes.Count == 0) return;
+
+                    using (var client = new HttpClient())
                     {
-                        string erro = await response.Content.ReadAsStringAsync();
-                        Application.Current.Dispatcher.Invoke(() =>
+                        foreach (var venda in vendasPendentes)
                         {
-                            MessageBox.Show($"A venda foi salva no computador, mas a nuvem recusou o envio!\n\nMotivo da API: {erro}", "Erro de Sincronização", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        });
+                            // Busca os itens e pagamentos vinculados a essa venda local
+                            var itens = conn.Query("SELECT id_produto, quantidade, preco_unitario, subtotal FROM tb_itens_venda WHERE id_venda = @IdVenda", new { IdVenda = venda.id })
+                                .Select(i => new { id_produto = i.id_produto, quantidade = i.quantidade, preco_unitario = i.preco_unitario, subtotal = i.subtotal }).ToList();
+
+                            var pagamentos = conn.Query("SELECT metodo, valor FROM tb_pagamentos WHERE id_venda = @IdVenda", new { IdVenda = venda.id })
+                                .Select(p => new { metodo = p.metodo, valor = p.valor }).ToList();
+
+                            var objVendaNuvem = new
+                            {
+                                id = venda.id,
+                                id_sessao_caixa = (int?)null,
+                                id_cliente = venda.id_cliente,
+                                data_hora = Convert.ToDateTime(venda.data_hora).ToString("yyyy-MM-dd HH:mm:ss"),
+                                subtotal = venda.subtotal,
+                                desconto = venda.desconto,
+                                total = venda.total,
+                                status = venda.status,
+                                pagamentos = pagamentos,
+                                itens = itens
+                            };
+
+                            string json = JsonSerializer.Serialize(objVendaNuvem);
+                            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                            var response = await client.PostAsync("https://tpace-api.whyguiih.workers.dev/api/app/vendas", content);
+
+                            // Se a API da nuvem salvou com sucesso, marcamos como sincronizado localmente!
+                            if (response.IsSuccessStatusCode)
+                            {
+                                conn.Execute("UPDATE tb_vendas SET sincronizado = 1 WHERE id = @Id", new { Id = venda.id });
+                            }
+                        }
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    MessageBox.Show($"Sem internet ou API offline.\nA venda está salva localmente.\n\nDetalhe: {ex.Message}", "Aviso de Rede", MessageBoxButton.OK, MessageBoxImage.Warning);
-                });
+                // Falha silenciosa. Se a internet estiver caída, o erro morre aqui e o sistema tentará de novo na próxima venda.
             }
         }
     }

@@ -64,6 +64,12 @@ namespace T_PACE
 
                 // Tenta adicionar a coluna id_filial na tabela usuários
                 try { connection.Execute("ALTER TABLE tb_usuarios ADD COLUMN id_filial INTEGER;"); } catch { /* Ignora se já existir */ }
+
+                // Tenta adicionar a coluna id_filial na tabela usuários
+                try { connection.Execute("ALTER TABLE tb_usuarios ADD COLUMN id_filial INTEGER;"); } catch { /* Ignora se já existir */ }
+
+                // NOVO: Adiciona a coluna para gerenciar a fila de sincronização
+                try { connection.Execute("ALTER TABLE tb_vendas ADD COLUMN sincronizado BOOLEAN DEFAULT 0;"); } catch { /* Ignora se já existir */ }
             }
         }
     }

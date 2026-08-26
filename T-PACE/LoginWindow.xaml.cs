@@ -112,13 +112,53 @@ namespace T_PACE
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // NOVO: Mostra o erro exato na tela (seja de banco ou de rede)
-                txtMensagem.Text = $"Erro: {ex.Message}";
-                btnOk.IsEnabled = true;
+                // NOVO: Se a internet cair, tenta autenticar com os dados gravados no banco local
+                if (FazerLoginLocal(usuario, senha))
+                {
+                    DialogResult = true;
+                }
+                else
+                {
+                    txtMensagem.Text = "Sem internet e usuário não encontrado offline.";
+                    btnOk.IsEnabled = true;
+                }
             }
         }
+
+        private bool FazerLoginLocal(string usuario, string senha)
+        {
+            try
+            {
+                using (var conn = new SqliteConnection(DatabaseConfig.ConnectionString))
+                {
+                    conn.Open();
+                    // Busca se o usuário já fez login alguma vez na vida enquanto tinha internet
+                    var userLocal = conn.QueryFirstOrDefault<UsuarioLogin>(
+                        "SELECT id, nome, nivel_acesso FROM tb_usuarios WHERE nome = @Nome AND senha = @Senha",
+                        new { Nome = usuario, Senha = senha });
+
+                    if (userLocal != null)
+                    {
+                        Session.CurrentUserId = userLocal.id;
+                        Session.CurrentUserName = userLocal.nome;
+
+                        long sessaoId = conn.ExecuteScalar<long>(
+                            @"INSERT INTO tb_sessao_caixa (id_caixa, id_usuario, data_abertura, valor_fundo_troco, status)
+                               VALUES (@IdCaixa, @IdUsuario, @DataAbertura, @ValorFundoTroco, @Status);
+                               SELECT last_insert_rowid();",
+                            new { IdCaixa = 1, IdUsuario = Session.CurrentUserId, DataAbertura = DateTime.Now, ValorFundoTroco = 0m, Status = 1 });
+
+                        Session.CurrentSessaoCaixaId = Convert.ToInt32(sessaoId);
+                        return true;
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
+    }
     }
 
     // Classes moldes para o C# conseguir ler as informações devolvidas pela sua API do Cloudflare[cite: 12]

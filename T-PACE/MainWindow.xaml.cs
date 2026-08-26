@@ -20,6 +20,12 @@ namespace T_PACE
         {
             InitializeComponent();
             btnFinalizar.Click += (s, e) => AbrirTelaPagamento();
+            txtBusca.KeyDown += TxtBusca_KeyDown;
+
+            Task.Run(async () => {
+                await SincronizacaoService.SincronizarProdutosAsync();
+                await SincronizacaoService.SincronizarVendasPendentesAsync(); // NOVO: Roda a fila ao abrir o PDV
+            });
 
             // ATUALIZANDO O PERFIL VISUAL
             if (!string.IsNullOrEmpty(Session.CurrentUserName))
@@ -578,31 +584,11 @@ namespace T_PACE
                             transaction.Commit(); // Se chegou aqui, joga tudo pro arquivo do banco de vez!
 
                             // ==========================================
-                            // 4. SINCRONIZA COM O CLOUDFLARE (BACKGROUND)
+                            // 4. CHAMA O SINCRONIZADOR DE FILA
                             // ==========================================
-                            var objVendaNuvem = new
-                            {
-                                id = idVenda,
-                                id_sessao_caixa = (int?)null, // <--- MUDE ESTA LINHA PARA NULO
-                                id_cliente = (int?)null,
-                                data_hora = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                                subtotal = subtotalBruto,
-                                desconto = descontoTotal,
-                                total = totalAPagar,
-                                status = "pago",
-                                pagamentos = new[] { new { metodo = metodoSelecionado, valor = totalAPagar } },
-                                itens = Carrinho.Select(i => new
-                                {
-                                    id_produto = i.IdProduto,
-                                    quantidade = i.Quantidade,
-                                    preco_unitario = i.PrecoUnitario,
-                                    subtotal = i.Total
-                                }).ToArray()
-                            };
-
-                            // Dispara a sincronização de forma assíncrona para não travar a tela
-                            Task.Run(async () => await SincronizacaoService.EnviarVendaParaNuvemAsync(objVendaNuvem));// Se chegou aqui, joga tudo pro arquivo do banco de vez!
+                            Task.Run(async () => await SincronizacaoService.SincronizarVendasPendentesAsync());
                         }
+
                         catch (Exception ex)
                         {
                             transaction.Rollback(); // Deu erro? Cancela tudo pra não quebrar o banco
