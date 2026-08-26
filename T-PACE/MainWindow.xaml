@@ -284,5 +284,49 @@
             </Border>
         </Border>
 
+        <!-- OVERLAY DE BUSCA POR NOME (F4) -->
+        <Border x:Name="OverlayBusca" Grid.RowSpan="3" Background="#B21A0A2E" Visibility="Collapsed" Panel.ZIndex="100">
+            <Border Width="650" Height="450" Background="#F8F3FC" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="30">
+                <Border.Effect>
+                    <DropShadowEffect Color="#2A1143" Opacity="0.8" BlurRadius="50" ShadowDepth="10"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="BUSCAR PRODUTO" Foreground="#5E3A7D" FontSize="22" FontWeight="Black" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+                    <TextBox x:Name="txtBuscaNome" Grid.Row="1" FontSize="20" FontWeight="Bold" Foreground="#2A1143" Padding="10,8" Background="#E6E0ED" BorderThickness="0" Margin="0,0,0,15" TextChanged="txtBuscaNome_TextChanged" PreviewKeyDown="txtBuscaNome_PreviewKeyDown"/>
+
+                    <!-- Lista de resultados interativa -->
+                    <ListBox x:Name="listaResultadosBusca" Grid.Row="2" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto" KeyDown="listaResultadosBusca_KeyDown" MouseDoubleClick="listaResultadosBusca_MouseDoubleClick">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="10" BorderBrush="#225E3A7D" BorderThickness="0,0,0,1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding nome}" FontSize="16" FontWeight="Bold" Foreground="#2A1143" VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <TextBlock Text="{Binding preco_venda, StringFormat=R$ {0:N2}}" FontSize="16" FontWeight="Black" Foreground="#A45FCE" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                                            <TextBlock Text="{Binding codigo_barras}" FontSize="14" Foreground="#885E3A7D" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <TextBlock Grid.Row="3" Text="[ ↓ ] Navegar   [ ENTER ] Selecionar   [ ESC ] Fechar" Foreground="#885E3A7D" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,15,0,0"/>
+                </Grid>
+            </Border>
+        </Border>
+
     </Grid>
 </Window>

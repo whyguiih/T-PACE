@@ -60,6 +60,10 @@ namespace T_PACE
             {
                 AbrirTelaCancelamento();
             }
+            else if (e.Key == Key.F4)
+            {
+                AbrirTelaBusca();
+            }
         }
 
         private void BiparProduto(string codigo)
@@ -192,6 +196,99 @@ namespace T_PACE
             {
                 MessageBox.Show("Este item não está no cupom atual!", "Erro", MessageBoxButton.OK, MessageBoxImage.Warning);
                 txtBuscaCancelamento.SelectAll();
+            }
+        }
+
+        // ==========================================
+        // LÓGICA DE BUSCA POR NOME (F4)
+        // ==========================================
+        private void AbrirTelaBusca()
+        {
+            OverlayBusca.Visibility = Visibility.Visible;
+            txtBuscaNome.Clear();
+            listaResultadosBusca.ItemsSource = null;
+            txtBuscaNome.Focus();
+        }
+
+        private void FecharTelaBusca()
+        {
+            OverlayBusca.Visibility = Visibility.Collapsed;
+            txtBusca.Focus(); // Devolve o foco para o leitor de código de barras
+        }
+
+        // Pesquisa no banco enquanto o usuário digita
+        private void txtBuscaNome_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            string termo = txtBuscaNome.Text.Trim();
+
+            // Só pesquisa a partir de 2 letras, para evitar sobrecarregar o banco
+            if (termo.Length >= 2)
+            {
+                var resultados = _repositorio.BuscarPorNome(termo);
+                listaResultadosBusca.ItemsSource = resultados;
+            }
+            else
+            {
+                listaResultadosBusca.ItemsSource = null;
+            }
+        }
+
+        // Controle do teclado no campo de texto
+        private void txtBuscaNome_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                FecharTelaBusca();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Down && listaResultadosBusca.Items.Count > 0)
+            {
+                // Impede que o TextBox continue processando a seta
+                e.Handled = true;
+
+                // Move o foco para a lista e seleciona o primeiro item
+                listaResultadosBusca.Focus();
+                listaResultadosBusca.SelectedIndex = 0;
+
+                // Força o "foco físico" no primeiro item da lista para as setas continuarem funcionando
+                var item = (System.Windows.Controls.ListBoxItem)listaResultadosBusca.ItemContainerGenerator.ContainerFromIndex(0);
+                item?.Focus();
+            }
+            else if (e.Key == Key.Enter && listaResultadosBusca.Items.Count > 0)
+            {
+                listaResultadosBusca.SelectedIndex = 0;
+                SelecionarProdutoBusca();
+                e.Handled = true;
+            }
+        }
+
+        // Controle do teclado navegando dentro da lista
+        private void listaResultadosBusca_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                SelecionarProdutoBusca();
+            }
+            else if (e.Key == Key.Escape)
+            {
+                txtBuscaNome.Focus(); // Aperta Esc, devolve o foco pra digitar de novo
+            }
+        }
+
+        // Para quem prefere usar o mouse (2 cliques)
+        private void listaResultadosBusca_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            SelecionarProdutoBusca();
+        }
+
+        private void SelecionarProdutoBusca()
+        {
+            if (listaResultadosBusca.SelectedItem is Produto produtoSelecionado)
+            {
+                FecharTelaBusca();
+
+                // MAGIA: Reaproveita a mesma função de ler o código de barras!
+                BiparProduto(produtoSelecionado.codigo_barras);
             }
         }
 
