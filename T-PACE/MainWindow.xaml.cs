@@ -526,7 +526,8 @@ namespace T_PACE
                 return;
             }
 
-            string metodoSelecionado = ((System.Windows.Controls.ComboBoxItem)cmbMetodoPagamento.SelectedItem).Content.ToString();
+            // Se por acaso vir nulo, assume "dinheiro" como padrão
+            string metodoSelecionado = ((System.Windows.Controls.ComboBoxItem)cmbMetodoPagamento.SelectedItem)?.Content?.ToString() ?? "dinheiro";
 
             try
             {
@@ -574,8 +575,7 @@ namespace T_PACE
 
                             var sqlPagamento = @"INSERT INTO tb_pagamentos (id_venda, metodo, valor)
                                                  VALUES (@IdVenda, @Metodo, @Valor);";
-                            // Se por acaso vir nulo, assume "dinheiro" como padrão
-                            string metodoSelecionado = ((System.Windows.Controls.ComboBoxItem)cmbMetodoPagamento.SelectedItem)?.Content?.ToString() ?? "dinheiro";
+                            
                             connection.Execute(sqlPagamento, new
                             {
                                 IdVenda = idVenda,

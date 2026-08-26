@@ -158,9 +158,9 @@ namespace T_PACE
             catch { }
             return false;
         }
-    }
+    } // <-- FIM DA CLASSE LoginWindow
 
-    // Classes moldes para o C# conseguir ler as informações devolvidas pela sua API do Cloudflare[cite: 12]
+    // As classes abaixo ficam FORA da LoginWindow, mas DENTRO do namespace T_PACE
     public class LoginResponse
     {
         public bool sucesso { get; set; }
@@ -177,7 +177,7 @@ namespace T_PACE
     public static class Session
     {
         public static int CurrentUserId { get; set; } = 0;
-        public static string CurrentUserName { get; set; } = string.Empty; // NOVO
+        public static string CurrentUserName { get; set; } = string.Empty;
         public static int CurrentSessaoCaixaId { get; set; } = 0;
     }
-}
+} // <-- FIM DO NAMESPACE T_PACE
