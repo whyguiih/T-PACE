@@ -159,7 +159,6 @@ namespace T_PACE
             return false;
         }
     }
-    }
 
     // Classes moldes para o C# conseguir ler as informações devolvidas pela sua API do Cloudflare[cite: 12]
     public class LoginResponse

@@ -571,15 +571,18 @@ namespace T_PACE
                             }
 
                             // 3. Grava o Pagamento
+
                             var sqlPagamento = @"INSERT INTO tb_pagamentos (id_venda, metodo, valor)
                                                  VALUES (@IdVenda, @Metodo, @Valor);";
-
+                            // Se por acaso vir nulo, assume "dinheiro" como padrão
+                            string metodoSelecionado = ((System.Windows.Controls.ComboBoxItem)cmbMetodoPagamento.SelectedItem)?.Content?.ToString() ?? "dinheiro";
                             connection.Execute(sqlPagamento, new
                             {
                                 IdVenda = idVenda,
                                 Metodo = metodoSelecionado,
                                 Valor = totalAPagar
                             }, transaction);
+
 
                             transaction.Commit(); // Se chegou aqui, joga tudo pro arquivo do banco de vez!
 
@@ -589,10 +592,10 @@ namespace T_PACE
                             Task.Run(async () => await SincronizacaoService.SincronizarVendasPendentesAsync());
                         }
 
-                        catch (Exception ex)
+                        catch (Exception) // <-- Tiramos o 'ex' daqui pois não vamos usá-lo nesta linha
                         {
                             transaction.Rollback(); // Deu erro? Cancela tudo pra não quebrar o banco
-                            throw ex;
+                            throw; // <-- Alterado de 'throw ex;' para apenas 'throw;'
                         }
                     }
                 }
