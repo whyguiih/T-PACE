@@ -27,7 +27,7 @@ export default {
         if (path === "/api/app/login" && method === "POST") {
             try {
                 const body = await request.json();
-                const stmt = env.DB.prepare("SELECT id, nome FROM tb_usuarios WHERE nome = ? AND senha = ?");
+                const stmt = env.DB.prepare("SELECT id, nome, nivel_acesso FROM tb_usuarios WHERE nome = ? AND senha = ?");
                 const { results } = await stmt.bind(body.nome, body.senha).all();
 
                 if (results.length > 0) {
@@ -37,6 +37,46 @@ export default {
                 }
             } catch (error) {
                 return new Response(JSON.stringify({ sucesso: false, erro: "Erro no servidor." }), { status: 500, headers: corsHeaders });
+            }
+        }
+        if (path === "/api/app/vendas" && method === "POST") {
+            try {
+                const body = await request.json();
+                const stmts = [];
+
+                // 1. Grava a Venda (com o MESMO ID que foi gerado no C# local)
+                stmts.push(env.DB.prepare(`
+                    INSERT INTO tb_vendas (id, id_sessao_caixa, id_cliente, data_hora, subtotal, desconto, total, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                `).bind(body.id, body.id_sessao_caixa, body.id_cliente, body.data_hora, body.subtotal, body.desconto, body.total, body.status));
+
+                // 2. Grava os Itens e DÁ BAIXA NO ESTOQUE DA NUVEM
+                for (const item of body.itens) {
+                    stmts.push(env.DB.prepare(`
+                        INSERT INTO tb_itens_venda (id_venda, id_produto, quantidade, preco_unitario, subtotal)
+                        VALUES (?, ?, ?, ?, ?)
+                    `).bind(body.id, item.id_produto, item.quantidade, item.preco_unitario, item.subtotal));
+
+                    // Abate a quantidade vendida do estoque atual
+                    stmts.push(env.DB.prepare(`
+                        UPDATE tb_produtos SET quantidade = quantidade - ? WHERE id = ?
+                    `).bind(item.quantidade, item.id_produto));
+                }
+
+                // 3. Grava o Pagamento
+                for (const pag of body.pagamentos) {
+                    stmts.push(env.DB.prepare(`
+                        INSERT INTO tb_pagamentos (id_venda, metodo, valor)
+                        VALUES (?, ?, ?)
+                    `).bind(body.id, pag.metodo, pag.valor));
+                }
+
+                // Dispara todas as queries de uma vez só no banco do Cloudflare (Transação segura)
+                await env.DB.batch(stmts);
+
+                return new Response(JSON.stringify({ sucesso: true }), { status: 201, headers: corsHeaders });
+            } catch (error) {
+                return new Response(JSON.stringify({ erro: "Erro ao sincronizar venda na nuvem.", detalhe: error.message }), { status: 500, headers: corsHeaders });
             }
         }
 
