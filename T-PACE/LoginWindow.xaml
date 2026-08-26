@@ -35,24 +35,28 @@
             </Setter>
         </Style>
 
-        <!-- Estilo Moderno para Caixas de Texto -->
+        <!-- Estilo Moderno para Caixas de Texto (Corrigido o Padding) -->
         <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
-                        <Border Background="#F3F4F6" CornerRadius="8" BorderThickness="1" BorderBrush="#E2E8F0" Padding="12,0">
-                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                        <Border Background="#F3F4F6" CornerRadius="8" BorderThickness="1" BorderBrush="#E2E8F0">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
         <Style TargetType="PasswordBox">
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="PasswordBox">
-                        <Border Background="#F3F4F6" CornerRadius="8" BorderThickness="1" BorderBrush="#E2E8F0" Padding="12,0">
-                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                        <Border Background="#F3F4F6" CornerRadius="8" BorderThickness="1" BorderBrush="#E2E8F0">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -89,13 +93,13 @@
                 <Border Grid.Column="0" Background="#5E3A7D" CornerRadius="16,0,0,16" Padding="30">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
 
-                        <!-- CÍRCULO DA LOGO (Substitua Source="..." pelo caminho da sua imagem) -->
+                        <!-- CÍRCULO DA LOGO (Com a imagem inserida) -->
                         <Border Width="130" Height="130" Background="#4A2D63" CornerRadius="65" Margin="0,0,0,25">
                             <Border.Effect>
                                 <DropShadowEffect Color="#2A1143" Opacity="0.5" BlurRadius="15" ShadowDepth="5"/>
                             </Border.Effect>
-                            <!-- Coloque sua Logo aqui: -->
-                            <Image x:Name="imgLogo" Stretch="Uniform" Margin="20" Source="pack://application:,,,/sua_logo_aqui.png"/>
+                            <!-- Imagem da logo referenciando o arquivo da sua raiz -->
+                            <Image x:Name="imgLogo" Stretch="Uniform" Margin="20" Source="pack://application:,,,/logo.png"/>
                         </Border>
 
                         <TextBlock Text="T-PACE" FontSize="32" FontWeight="Black" Foreground="White" HorizontalAlignment="Center"/>
@@ -106,7 +110,7 @@
                 <!-- ============================================== -->
                 <!-- LADO DIREITO: FORMULÁRIO E MENSAGENS -->
                 <!-- ============================================== -->
-                <Grid Grid.Column="1" Padding="40">
+                <Grid Grid.Column="1" Margin="40">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
