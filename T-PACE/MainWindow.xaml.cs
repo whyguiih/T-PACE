@@ -582,8 +582,8 @@ namespace T_PACE
                             // ==========================================
                             var objVendaNuvem = new
                             {
-                                id = idVenda, // Mandamos o ID local pra manter os bancos idênticos
-                                id_sessao_caixa = Session.CurrentSessaoCaixaId,
+                                id = idVenda,
+                                id_sessao_caixa = (int?)null, // <--- MUDE ESTA LINHA PARA NULO
                                 id_cliente = (int?)null,
                                 data_hora = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                                 subtotal = subtotalBruto,

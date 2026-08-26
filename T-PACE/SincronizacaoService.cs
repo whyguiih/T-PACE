@@ -163,14 +163,25 @@ namespace T_PACE
                     var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
                     // Dispara pra nuvem
-                    await client.PostAsync("https://tpace-api.whyguiih.workers.dev/api/app/vendas", content);
+                    var response = await client.PostAsync("https://tpace-api.whyguiih.workers.dev/api/app/vendas", content);
+
+                    // Se a API não devolver "201 Created" ou "200 OK", nós mostramos o erro!
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        string erro = await response.Content.ReadAsStringAsync();
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            MessageBox.Show($"A venda foi salva no computador, mas a nuvem recusou o envio!\n\nMotivo da API: {erro}", "Erro de Sincronização", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        });
+                    }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Ocultamos o erro propositalmente!
-                // Como é executado em Background, se a internet cair, a venda salva localmente
-                // e o caixa não trava. Num sistema offline-first avançado, salvaríamos numa fila pra tentar depois.
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show($"Sem internet ou API offline.\nA venda está salva localmente.\n\nDetalhe: {ex.Message}", "Aviso de Rede", MessageBoxButton.OK, MessageBoxImage.Warning);
+                });
             }
         }
     }
