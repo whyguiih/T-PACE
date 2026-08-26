@@ -151,5 +151,27 @@ namespace T_PACE
                 }
             }
         }
+        // NOVO MÉTOD: Envia a venda para a nuvem
+        public static async Task EnviarVendaParaNuvemAsync(object vendaObj)
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    // Transforma o objeto C# num JSON limpinho
+                    string json = JsonSerializer.Serialize(vendaObj);
+                    var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                    // Dispara pra nuvem
+                    await client.PostAsync("https://tpace-api.whyguiih.workers.dev/api/app/vendas", content);
+                }
+            }
+            catch
+            {
+                // Ocultamos o erro propositalmente!
+                // Como é executado em Background, se a internet cair, a venda salva localmente
+                // e o caixa não trava. Num sistema offline-first avançado, salvaríamos numa fila pra tentar depois.
+            }
+        }
     }
 }

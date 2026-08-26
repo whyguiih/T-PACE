@@ -576,6 +576,32 @@ namespace T_PACE
                             }, transaction);
 
                             transaction.Commit(); // Se chegou aqui, joga tudo pro arquivo do banco de vez!
+
+                            // ==========================================
+                            // 4. SINCRONIZA COM O CLOUDFLARE (BACKGROUND)
+                            // ==========================================
+                            var objVendaNuvem = new
+                            {
+                                id = idVenda, // Mandamos o ID local pra manter os bancos idênticos
+                                id_sessao_caixa = Session.CurrentSessaoCaixaId,
+                                id_cliente = (int?)null,
+                                data_hora = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                                subtotal = subtotalBruto,
+                                desconto = descontoTotal,
+                                total = totalAPagar,
+                                status = "pago",
+                                pagamentos = new[] { new { metodo = metodoSelecionado, valor = totalAPagar } },
+                                itens = Carrinho.Select(i => new
+                                {
+                                    id_produto = i.IdProduto,
+                                    quantidade = i.Quantidade,
+                                    preco_unitario = i.PrecoUnitario,
+                                    subtotal = i.Total
+                                }).ToArray()
+                            };
+
+                            // Dispara a sincronização de forma assíncrona para não travar a tela
+                            Task.Run(async () => await SincronizacaoService.EnviarVendaParaNuvemAsync(objVendaNuvem));// Se chegou aqui, joga tudo pro arquivo do banco de vez!
                         }
                         catch (Exception ex)
                         {
