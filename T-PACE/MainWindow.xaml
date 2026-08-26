@@ -400,7 +400,7 @@
                         <TextBlock x:Name="txtTroco" Text="R$ 0,00" FontSize="26" FontWeight="Black" Foreground="#D43D3D" HorizontalAlignment="Right"/>
                     </Grid>
 
-                    <TextBlock Grid.Row="5" Text="[ ESC ] Voltar   [ ENTER ] Confirmar" Foreground="#885E3A7D" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock Grid.Row="5" Text="[ ↑ / ↓ ] Trocar Pagamento   [ ESC ] Voltar   [ ENTER ] Confirmar" Foreground="#885E3A7D" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"/>
                 </Grid>
             </Border>
         </Border>

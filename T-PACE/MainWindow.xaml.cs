@@ -480,6 +480,27 @@ namespace T_PACE
                 ProcessarVenda();
                 e.Handled = true;
             }
+            // NOVO: Setas para cima e para baixo trocam a forma de pagamento
+            else if (e.Key == Key.Up)
+            {
+                // Se não estiver no primeiro item, sobe um. Se estiver, vai pro último.
+                if (cmbMetodoPagamento.SelectedIndex > 0)
+                    cmbMetodoPagamento.SelectedIndex--;
+                else
+                    cmbMetodoPagamento.SelectedIndex = cmbMetodoPagamento.Items.Count - 1;
+
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Down)
+            {
+                // Se não estiver no último item, desce um. Se estiver, vai pro primeiro.
+                if (cmbMetodoPagamento.SelectedIndex < cmbMetodoPagamento.Items.Count - 1)
+                    cmbMetodoPagamento.SelectedIndex++;
+                else
+                    cmbMetodoPagamento.SelectedIndex = 0;
+
+                e.Handled = true;
+            }
         }
 
         private void ProcessarVenda()
