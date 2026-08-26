@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dapper;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -18,6 +19,7 @@ namespace T_PACE
         public MainWindow()
         {
             InitializeComponent();
+            btnFinalizar.Click += (s, e) => AbrirTelaPagamento();
 
             // ATUALIZANDO O PERFIL VISUAL
             if (!string.IsNullOrEmpty(Session.CurrentUserName))
@@ -68,6 +70,10 @@ namespace T_PACE
             {
                 AbrirTelaDesconto();
             }
+            else if (e.Key == Key.F2)
+            {
+                AbrirTelaPagamento();
+            }
         }
 
         private void BiparProduto(string codigo)
@@ -103,6 +109,7 @@ namespace T_PACE
                     {
                         Carrinho.Add(new ItemCupom
                         {
+                            IdProduto = produto.id,
                             Codigo = produto.codigo_barras,
                             Descricao = produto.nome,
                             Quantidade = 1,
@@ -410,10 +417,176 @@ namespace T_PACE
         {
 
         }
+
+        // ==========================================
+        // LÓGICA DE PAGAMENTO E FINALIZAÇÃO (F2)
+        // ==========================================
+        private void AbrirTelaPagamento()
+        {
+            if (Carrinho.Count == 0)
+            {
+                MessageBox.Show("Adicione itens ao cupom antes de finalizar a venda.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            decimal subtotalBruto = Carrinho.Sum(i => i.PrecoUnitario * i.Quantidade);
+            decimal descontosDePromocoes = Carrinho.Sum(i => i.DescontoUnitario * i.Quantidade);
+            decimal totalAPagar = subtotalBruto - (descontosDePromocoes + _descontoManualVenda);
+
+            txtPagamentoTotal.Text = $"R$ {totalAPagar:N2}";
+            txtValorRecebido.Text = totalAPagar.ToString("N2"); // Sugere o valor exato inicialmente
+            txtTroco.Text = "R$ 0,00";
+
+            OverlayPagamento.Visibility = Visibility.Visible;
+            cmbMetodoPagamento.SelectedIndex = 0; // Reseta pro Dinheiro
+            txtValorRecebido.SelectAll();
+            txtValorRecebido.Focus();
+        }
+
+        private void FecharTelaPagamento()
+        {
+            OverlayPagamento.Visibility = Visibility.Collapsed;
+            txtBusca.Focus();
+        }
+
+        private void txtValorRecebido_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            decimal subtotalBruto = Carrinho.Sum(i => i.PrecoUnitario * i.Quantidade);
+            decimal descontosDePromocoes = Carrinho.Sum(i => i.DescontoUnitario * i.Quantidade);
+            decimal totalAPagar = subtotalBruto - (descontosDePromocoes + _descontoManualVenda);
+
+            string entrada = txtValorRecebido.Text.Trim().Replace("R$", "").Replace(" ", "").Replace(",", ".");
+
+            if (decimal.TryParse(entrada, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal valorRecebido))
+            {
+                decimal troco = valorRecebido - totalAPagar;
+                txtTroco.Text = troco < 0 ? "R$ 0,00" : $"R$ {troco:N2}";
+            }
+            else
+            {
+                txtTroco.Text = "R$ 0,00";
+            }
+        }
+
+        private void txtValorRecebido_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                FecharTelaPagamento();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Enter)
+            {
+                ProcessarVenda();
+                e.Handled = true;
+            }
+        }
+
+        private void ProcessarVenda()
+        {
+            decimal subtotalBruto = Carrinho.Sum(i => i.PrecoUnitario * i.Quantidade);
+            decimal descontosDePromocoes = Carrinho.Sum(i => i.DescontoUnitario * i.Quantidade);
+            decimal descontoTotal = descontosDePromocoes + _descontoManualVenda;
+            decimal totalAPagar = subtotalBruto - descontoTotal;
+
+            string entrada = txtValorRecebido.Text.Trim().Replace("R$", "").Replace(" ", "").Replace(",", ".");
+            decimal.TryParse(entrada, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal valorRecebido);
+
+            if (valorRecebido < totalAPagar)
+            {
+                MessageBox.Show("O valor recebido é menor que o total da venda!", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                txtValorRecebido.SelectAll();
+                return;
+            }
+
+            string metodoSelecionado = ((System.Windows.Controls.ComboBoxItem)cmbMetodoPagamento.SelectedItem).Content.ToString();
+
+            try
+            {
+                using (var connection = new Microsoft.Data.Sqlite.SqliteConnection(DatabaseConfig.ConnectionString))
+                {
+                    connection.Open();
+                    // O BeginTransaction garante que as tabelas sejam salvas em lote (ou tudo funciona ou tudo cancela)
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            // 1. Grava a Venda
+                            var sqlVenda = @"INSERT INTO tb_vendas (id_sessao_caixa, id_cliente, data_hora, subtotal, desconto, total, status)
+                                             VALUES (@Sessao, NULL, @DataHora, @Subtotal, @Desconto, @Total, 'pago');
+                                             SELECT last_insert_rowid();";
+
+                            long idVenda = connection.ExecuteScalar<long>(sqlVenda, new
+                            {
+                                Sessao = Session.CurrentSessaoCaixaId,
+                                DataHora = DateTime.Now,
+                                Subtotal = subtotalBruto,
+                                Desconto = descontoTotal,
+                                Total = totalAPagar
+                            }, transaction);
+
+                            // 2. Grava os Itens e DÁ BAIXA NO ESTOQUE (quantidade - @Quantidade)
+                            foreach (var item in Carrinho)
+                            {
+                                var sqlItem = @"INSERT INTO tb_itens_venda (id_venda, id_produto, quantidade, preco_unitario, subtotal)
+                                                VALUES (@IdVenda, @IdProduto, @Quantidade, @PrecoUnitario, @Subtotal);
+                                                
+                                                UPDATE tb_produtos SET quantidade = quantidade - @Quantidade WHERE id = @IdProduto;";
+
+                                connection.Execute(sqlItem, new
+                                {
+                                    IdVenda = idVenda,
+                                    IdProduto = item.IdProduto,
+                                    Quantidade = item.Quantidade,
+                                    PrecoUnitario = item.PrecoUnitario,
+                                    Subtotal = item.Total
+                                }, transaction);
+                            }
+
+                            // 3. Grava o Pagamento
+                            var sqlPagamento = @"INSERT INTO tb_pagamentos (id_venda, metodo, valor)
+                                                 VALUES (@IdVenda, @Metodo, @Valor);";
+
+                            connection.Execute(sqlPagamento, new
+                            {
+                                IdVenda = idVenda,
+                                Metodo = metodoSelecionado,
+                                Valor = totalAPagar
+                            }, transaction);
+
+                            transaction.Commit(); // Se chegou aqui, joga tudo pro arquivo do banco de vez!
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback(); // Deu erro? Cancela tudo pra não quebrar o banco
+                            throw ex;
+                        }
+                    }
+                }
+
+                // Finalizou com sucesso! Limpa a tela pro próximo cliente
+                Carrinho.Clear();
+                _descontoManualVenda = 0m;
+                txtUltimoNome.Text = "Caixa Livre";
+                txtUltimoDetalhes.Text = " ";
+                txtUltimoPreco.Text = "R$ 0,00";
+                AtualizarTotais();
+                FecharTelaPagamento();
+
+                // Em um PDV real, aqui iria um comando pra imprimir o cupom na térmica
+                MessageBox.Show("Imprimindo cupom fiscal em KNUP KP-IM602...", "Venda finalizada", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao concluir venda.", "Erro Crítico", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 
     public class ItemCupom : INotifyPropertyChanged
     {
+        public int IdProduto { get; set; } // <--- ADICIONE ESTA LINHA AQUI
+
         private int _quantidade;
         private decimal _total;
 

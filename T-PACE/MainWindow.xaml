@@ -353,5 +353,57 @@
             </Border>
         </Border>
 
+        <!-- OVERLAY DE PAGAMENTO E FINALIZAÇÃO (F2) -->
+        <Border x:Name="OverlayPagamento" Grid.RowSpan="3" Background="#B21A0A2E" Visibility="Collapsed" Panel.ZIndex="100">
+            <Border Width="450" Height="420" Background="#F8F3FC" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="30">
+                <Border.Effect>
+                    <DropShadowEffect Color="#2A1143" Opacity="0.8" BlurRadius="50" ShadowDepth="10"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="FINALIZAR VENDA" Foreground="#A45FCE" FontSize="22" FontWeight="Black" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+                    <!-- Total a Pagar -->
+                    <Grid Grid.Row="1" Margin="0,0,0,20">
+                        <TextBlock Text="TOTAL A PAGAR:" FontSize="18" FontWeight="Bold" Foreground="#5E3A7D" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="txtPagamentoTotal" Text="R$ 0,00" FontSize="28" FontWeight="Black" Foreground="#A45FCE" HorizontalAlignment="Right"/>
+                    </Grid>
+
+                    <!-- Método de Pagamento -->
+                    <StackPanel Grid.Row="2" Margin="0,0,0,15">
+                        <TextBlock Text="Método de Pagamento:" Foreground="#5E3A7D" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="cmbMetodoPagamento" FontSize="18" Padding="10,5" SelectedIndex="0" Foreground="#2A1143" FontWeight="Bold">
+                            <ComboBoxItem Content="dinheiro"/>
+                            <ComboBoxItem Content="pix"/>
+                            <ComboBoxItem Content="cartão de crédito"/>
+                            <ComboBoxItem Content="cartão de débito"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Valor Recebido (para calcular troco) -->
+                    <StackPanel Grid.Row="3" Margin="0,0,0,15">
+                        <TextBlock Text="Valor Recebido do Cliente (R$):" Foreground="#5E3A7D" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="txtValorRecebido" FontSize="28" FontWeight="Bold" Foreground="#2A1143" Padding="10,5" Background="#E6E0ED" BorderThickness="0" TextAlignment="Right" PreviewKeyDown="txtValorRecebido_PreviewKeyDown" TextChanged="txtValorRecebido_TextChanged"/>
+                    </StackPanel>
+
+                    <!-- Troco -->
+                    <Grid Grid.Row="4" VerticalAlignment="Bottom" Margin="0,0,0,20">
+                        <TextBlock Text="TROCO:" FontSize="18" FontWeight="Bold" Foreground="#D43D3D" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="txtTroco" Text="R$ 0,00" FontSize="26" FontWeight="Black" Foreground="#D43D3D" HorizontalAlignment="Right"/>
+                    </Grid>
+
+                    <TextBlock Grid.Row="5" Text="[ ESC ] Voltar   [ ENTER ] Confirmar" Foreground="#885E3A7D" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"/>
+                </Grid>
+            </Border>
+        </Border>
+
     </Grid>
 </Window>
