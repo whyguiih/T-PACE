@@ -79,6 +79,26 @@ export default {
                 return new Response(JSON.stringify({ erro: "Erro ao sincronizar venda na nuvem.", detalhe: error.message }), { status: 500, headers: corsHeaders });
             }
         }
+        if (path === "/api/app/sessoes" && method === "POST") {
+            try {
+                const body = await request.json();
+                const stmts = [];
+                for (const s of body) {
+                    stmts.push(env.DB.prepare(`
+                        INSERT INTO tb_sessao_caixa (id, id_caixa, id_usuario, data_abertura, valor_fundo_troco, data_fechamento, status, valor_fechamento)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(id) DO UPDATE SET 
+                            data_fechamento = excluded.data_fechamento, 
+                            status = excluded.status, 
+                            valor_fechamento = excluded.valor_fechamento
+                    `).bind(s.id, s.id_caixa, s.id_usuario, s.data_abertura, s.valor_fundo_troco, s.data_fechamento, s.status, s.valor_fechamento));
+                }
+                await env.DB.batch(stmts);
+                return new Response(JSON.stringify({ sucesso: true }), { status: 200, headers: corsHeaders });
+            } catch (error) {
+                return new Response(JSON.stringify({ erro: "Erro ao sincronizar sessões.", detalhe: error.message }), { status: 500, headers: corsHeaders });
+            }
+        }
 
         // =====================================================================
         // ROTAS DA WEB (HTML/CSS/JS - Gerenciamento)
