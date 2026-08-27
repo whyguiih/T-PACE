@@ -56,14 +56,15 @@ namespace T_PACE
         }
 
         // Adicionamos a palavra 'async' aqui na assinatura do método
+        // Adicionamos a palavra 'async' aqui na assinatura do método
         private async void TxtBusca_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
-                string codigo = txtBusca.Text.Trim();
-                if (!string.IsNullOrEmpty(codigo))
+                string entradaCompleta = txtBusca.Text.Trim();
+                if (!string.IsNullOrEmpty(entradaCompleta))
                 {
-                    BiparProduto(codigo);
+                    BiparProduto(entradaCompleta);
                 }
             }
             else if (e.Key == Key.F3)
@@ -89,11 +90,29 @@ namespace T_PACE
             }
         }
 
-        private void BiparProduto(string codigo)
+        private void BiparProduto(string entradaCodigo)
         {
             try
             {
-                var produto = _repositorio.BuscarPorCodigoDeBarras(codigo);
+                int quantidadeDesejada = 1;
+                string codigoFinal = entradaCodigo;
+
+                // 1. INTELIGÊNCIA DO MULTIPLICADOR (Ex: 5x123456)
+                if (entradaCodigo.Contains("x") || entradaCodigo.Contains("X"))
+                {
+                    // Quebra a string em duas partes: o que vem antes do X e o que vem depois
+                    string[] partes = entradaCodigo.Split(new char[] { 'x', 'X' }, 2);
+
+                    // Verifica se a primeira parte é realmente um número
+                    if (int.TryParse(partes[0].Trim(), out int qtd) && qtd > 0)
+                    {
+                        quantidadeDesejada = qtd;
+                        codigoFinal = partes[1].Trim(); // O código de barras é o que restou
+                    }
+                }
+
+                // 2. BUSCA NO BANCO
+                var produto = _repositorio.BuscarPorCodigoDeBarras(codigoFinal);
 
                 if (produto != null)
                 {
@@ -110,12 +129,12 @@ namespace T_PACE
                     }
 
                     decimal precoCobrado = precoCheio - descontoDoItem;
-
                     var itemExistente = Carrinho.FirstOrDefault(c => c.Codigo == produto.codigo_barras);
 
                     if (itemExistente != null)
                     {
-                        itemExistente.Quantidade += 1;
+                        // Soma a quantidadeNova com a que já estava no carrinho
+                        itemExistente.Quantidade += quantidadeDesejada;
                         itemExistente.Total = itemExistente.Quantidade * precoCobrado;
                     }
                     else
@@ -125,22 +144,25 @@ namespace T_PACE
                             IdProduto = produto.id,
                             Codigo = produto.codigo_barras,
                             Descricao = produto.nome,
-                            Quantidade = 1,
+                            Quantidade = quantidadeDesejada,
                             PrecoUnitario = precoCheio,
                             DescontoUnitario = descontoDoItem,
-                            Total = precoCobrado
+                            Total = quantidadeDesejada * precoCobrado
                         });
                     }
 
                     txtUltimoNome.Text = produto.nome;
-                    txtUltimoDetalhes.Text = $"Cód: {produto.codigo_barras}  |  Qtd: 1 un";
-                    txtUltimoPreco.Text = $"R$ {precoCobrado:N2}";
+                    txtUltimoDetalhes.Text = $"Cód: {produto.codigo_barras}  |  Qtd: {quantidadeDesejada} un";
+
+                    // Exibe o preço total cobrado pela quantidade inteira na tela principal
+                    txtUltimoPreco.Text = $"R$ {(quantidadeDesejada * precoCobrado):N2}";
 
                     AtualizarTotais();
                     txtBusca.Clear();
                 }
                 else
                 {
+                    // Se não encontrou nem com nem sem multiplicador
                     MessageBox.Show("Produto não cadastrado!", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                     txtBusca.SelectAll();
                 }
