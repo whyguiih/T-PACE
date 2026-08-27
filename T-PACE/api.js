@@ -153,12 +153,17 @@ export default {
             COALESCE(SUM(iv.quantidade), 0) as volume_mes
             FROM tb_produtos p
             LEFT JOIN tb_itens_venda iv ON p.id = iv.id_produto
-            LEFT JOIN tb_vendas v ON iv.id_venda = v.id AND v.data_hora >= date('now', '-30 days') AND v.status = 'pago'
-            GROUP BY p.id ORDER BY volume_mes DESC
+            LEFT JOIN tb_vendas v ON iv.id_venda = v.id 
+                AND v.data_hora >= datetime('now', '-30 days') 
+                AND v.status = 'pago'
+            GROUP BY p.id 
+            ORDER BY volume_mes DESC
         `;
                 const res = await env.DB.prepare(query).all();
                 return new Response(JSON.stringify(res.results), { headers: corsHeaders });
-            } catch (e) { return new Response(JSON.stringify({ erro: e.message }), { status: 500, headers: corsHeaders }); }
+            } catch (e) {
+                return new Response(JSON.stringify({ erro: e.message }), { status: 500, headers: corsHeaders });
+            }
         }
 
         else if (method === "GET" && path === "/relatorios/encalhados") {
@@ -169,11 +174,13 @@ export default {
             LEFT JOIN tb_itens_venda iv ON p.id = iv.id_produto
             LEFT JOIN tb_vendas v ON iv.id_venda = v.id AND v.status = 'pago'
             GROUP BY p.id
-            HAVING ultima_venda IS NULL OR ultima_venda <= date('now', '-45 days')
+            HAVING ultima_venda IS NULL OR ultima_venda <= datetime('now', '-45 days')
         `;
                 const res = await env.DB.prepare(query).all();
                 return new Response(JSON.stringify(res.results), { headers: corsHeaders });
-            } catch (e) { return new Response(JSON.stringify({ erro: e.message }), { status: 500, headers: corsHeaders }); }
+            } catch (e) {
+                return new Response(JSON.stringify({ erro: e.message }), { status: 500, headers: corsHeaders });
+            }
         }
 
         else if (method === "GET" && path === "/relatorios/trocas") {
@@ -183,53 +190,42 @@ export default {
             FROM tb_itens_venda iv
             JOIN tb_vendas v ON iv.id_venda = v.id
             JOIN tb_produtos p ON iv.id_produto = p.id
-            WHERE v.status = 'cancelado' ORDER BY v.data_hora DESC
+            WHERE v.status = 'cancelado' 
+            ORDER BY v.data_hora DESC
         `;
                 const res = await env.DB.prepare(query).all();
                 return new Response(JSON.stringify(res.results), { headers: corsHeaders });
-            } catch (e) { return new Response(JSON.stringify({ erro: e.message }), { status: 500, headers: corsHeaders }); }
+            } catch (e) {
+                return new Response(JSON.stringify({ erro: e.message }), { status: 500, headers: corsHeaders });
+            }
         }
 
-        // 🌟 NOVA ROTA: ESTOQUE DESEQUILIBRADO
+        // 🌟 ROTA REFEITA: ESTOQUE DESEQUILIBRADO
         else if (method === "GET" && path === "/relatorios/desequilibrados") {
             try {
-                const { results } = await env.DB.prepare("SELECT * FROM tb_produtos").all();
+                // Agora usamos o campo 'quantidade_minima' que já existe no seu banco de dados
+                // Mapeamos para ficar perfeitamente compatível com o seu frontend atual
+                const query = `
+            SELECT nome, quantidade, quantidade_minima
+            FROM tb_produtos
+            WHERE quantidade <= (quantidade_minima / 3) 
+               OR quantidade >= (quantidade_minima * 2)
+        `;
+                const { results } = await env.DB.prepare(query).all();
 
-                const grupos = {};
+                const desequilibrados = results.map(item => {
+                    const quant = item.quantidade || 0;
+                    const min = item.quantidade_minima || 10;
+                    const isExcesso = quant >= (min * 2);
 
-                // Agrupa os itens e soma a quantidade
-                results.forEach(p => {
-                    const nomeBase = (p.nome || '').trim().toLowerCase();
-                    if (!grupos[nomeBase]) {
-                        grupos[nomeBase] = { total: 0, count: 0, itens: [] };
-                    }
-                    grupos[nomeBase].total += p.quantidade || 0;
-                    grupos[nomeBase].count += 1;
-                    grupos[nomeBase].itens.push(p);
+                    return {
+                        nome: item.nome,
+                        quantidade: quant,
+                        media: min, // Mantivemos a chave "media" para o seu PHP não quebrar
+                        acao: isExcesso ? 'Promoção (Excesso)' : 'Repor (Escassez)',
+                        cor: isExcesso ? 'alerta' : 'alerta-baixo'
+                    };
                 });
-
-                const desequilibrados = [];
-
-                for (const nomeBase in grupos) {
-                    const grupo = grupos[nomeBase];
-                    const media = grupo.count > 0 ? (grupo.total / grupo.count) : 0;
-
-                    grupo.itens.forEach(item => {
-                        const quant = item.quantidade || 0;
-
-                        // 1. PENEIRA CRÍTICA: Se for menor/igual a um terço OU maior/igual ao dobro
-                        if (quant <= (media / 3) || quant >= (media * 2)) {
-                            desequilibrados.push({
-                                nome: item.nome,
-                                quantidade: quant,
-                                media: Number(media.toFixed(1)),
-                                acao: (quant >= (media * 2)) ? 'Promoção (Excesso)' : 'Repor (Escassez)',
-                                cor: (quant >= (media * 2)) ? 'alerta' : 'alerta-baixo'
-                            });
-                        }
-                        // (Opcional: O sistema web só precisa dos desequilibrados, então ignoramos o resto)
-                    });
-                }
 
                 return new Response(JSON.stringify(desequilibrados), { status: 200, headers: corsHeaders });
             } catch (e) {
@@ -237,6 +233,60 @@ export default {
             }
         }
 
+
+        // 🌟 NOVA ROTA: DESEMPENHO E VENDAS DETALHADAS (Período ajustável)
+        else if (method === "GET" && path.startsWith("/relatorios/desempenho")) {
+            try {
+                const url = new URL(request.url);
+
+                // Pega as datas da URL. Se não vierem, pega os últimos 30 dias por padrão.
+                const hoje = new Date();
+                const trintaDiasAtras = new Date(hoje);
+                trintaDiasAtras.setDate(hoje.getDate() - 30);
+
+                const inicio = url.searchParams.get("inicio") || trintaDiasAtras.toISOString().split('T')[0];
+                const fim = url.searchParams.get("fim") || hoje.toISOString().split('T')[0];
+
+                // 1. Consulta para o Gráfico (Faturamento Agrupado por Dia)
+                const queryGrafico = `
+            SELECT date(data_hora) as data_venda, SUM(total) as faturamento_diario
+            FROM tb_vendas
+            WHERE status = 'pago' AND date(data_hora) BETWEEN date(?) AND date(?)
+            GROUP BY date(data_hora)
+            ORDER BY data_venda ASC
+        `;
+                const resGrafico = await env.DB.prepare(queryGrafico).bind(inicio, fim).all();
+
+                // 2. Consulta Detalhada (Agrupando todos os produtos da mesma venda em uma única linha)
+                const queryDetalhes = `
+            SELECT 
+                v.id as id_venda,
+                v.data_hora,
+                v.subtotal as venda_subtotal,
+                v.total as venda_total,
+                u.nome as vendedor,
+                GROUP_CONCAT(CAST(iv.quantidade AS INTEGER) || 'x ' || p.nome, ' | ') as produtos_comprados
+            FROM tb_vendas v
+            LEFT JOIN tb_sessao_caixa sc ON v.id_sessao_caixa = sc.id
+            LEFT JOIN tb_usuarios u ON sc.id_usuario = u.id
+            JOIN tb_itens_venda iv ON v.id = iv.id_venda
+            JOIN tb_produtos p ON iv.id_produto = p.id
+            WHERE v.status = 'pago' AND date(v.data_hora) BETWEEN date(?) AND date(?)
+            GROUP BY v.id
+            ORDER BY v.data_hora DESC
+        `;
+                const resDetalhes = await env.DB.prepare(queryDetalhes).bind(inicio, fim).all();
+
+                return new Response(JSON.stringify({
+                    grafico: resGrafico.results,
+                    detalhes: resDetalhes.results,
+                    periodo: { inicio, fim }
+                }), { status: 200, headers: corsHeaders });
+
+            } catch (e) {
+                return new Response(JSON.stringify({ erro: e.message }), { status: 500, headers: corsHeaders });
+            }
+        }
 
         if (request.method === "GET" && path === "/api/nfe/pendentes") {
             try {
