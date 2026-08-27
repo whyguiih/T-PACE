@@ -22,7 +22,8 @@ namespace T_PACE
             btnFinalizar.Click += (s, e) => AbrirTelaPagamento();
             txtBusca.KeyDown += TxtBusca_KeyDown;
 
-            Task.Run(async () => {
+            Task.Run(async () =>
+            {
                 await SincronizacaoService.SincronizarProdutosAsync();
                 await SincronizacaoService.SincronizarVendasPendentesAsync(); // NOVO: Roda a fila ao abrir o PDV
             });
@@ -467,7 +468,7 @@ namespace T_PACE
             decimal descontosDePromocoes = Carrinho.Sum(i => i.DescontoUnitario * i.Quantidade);
             decimal totalAPagar = subtotalBruto - (descontosDePromocoes + _descontoManualVenda);
 
-            string entrada = txtValorRecebido.Text.Trim().Replace("R$", "").Replace(" ", "").Replace(",", ".");
+            string entrada = txtValorRecebido.Text.Trim().Replace("R$", "").Replace(" ", "").Replace(".", "").Replace(",", ".");
 
             if (decimal.TryParse(entrada, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal valorRecebido))
             {
@@ -522,7 +523,7 @@ namespace T_PACE
             decimal descontoTotal = descontosDePromocoes + _descontoManualVenda;
             decimal totalAPagar = subtotalBruto - descontoTotal;
 
-            string entrada = txtValorRecebido.Text.Trim().Replace("R$", "").Replace(" ", "").Replace(",", ".");
+            string entrada = txtValorRecebido.Text.Trim().Replace("R$", "").Replace(" ", "").Replace(".", "").Replace(",", ".");
             decimal.TryParse(entrada, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal valorRecebido);
 
             if (valorRecebido < totalAPagar)
@@ -581,7 +582,7 @@ namespace T_PACE
 
                             var sqlPagamento = @"INSERT INTO tb_pagamentos (id_venda, metodo, valor)
                                                  VALUES (@IdVenda, @Metodo, @Valor);";
-                            
+
                             connection.Execute(sqlPagamento, new
                             {
                                 IdVenda = idVenda,
@@ -593,15 +594,17 @@ namespace T_PACE
                             transaction.Commit(); // Se chegou aqui, joga tudo pro arquivo do banco de vez!
 
                             // ==========================================
-                            // 4. CHAMA O SINCRONIZADOR DE FILA
+                            // IMPRIMIR O CUPOM DA VENDA
                             // ==========================================
+                            ImprimirRecibo(idVenda, Carrinho.ToList(), subtotalBruto, descontoTotal, totalAPagar, metodoSelecionado);
+
+                            // CHAMA O SINCRONIZADOR DE FILA
                             Task.Run(async () => await SincronizacaoService.SincronizarVendasPendentesAsync());
                         }
-
-                        catch (Exception) // <-- Tiramos o 'ex' daqui pois não vamos usá-lo nesta linha
+                        catch (Exception)
                         {
                             transaction.Rollback(); // Deu erro? Cancela tudo pra não quebrar o banco
-                            throw; // <-- Alterado de 'throw ex;' para apenas 'throw;'
+                            throw;
                         }
                     }
                 }
@@ -614,13 +617,12 @@ namespace T_PACE
                 txtUltimoPreco.Text = "R$ 0,00";
                 AtualizarTotais();
                 FecharTelaPagamento();
-
-                // Em um PDV real, aqui iria um comando pra imprimir o cupom na térmica
-                MessageBox.Show("Imprimindo cupom fiscal em KNUP KP-IM602...", "Venda finalizada", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao concluir venda.", "Erro Crítico", MessageBoxButton.OK, MessageBoxImage.Error);
+                // AGORA SIM ESTAMOS USANDO O "ex.Message"!
+                // Se der erro ao vender, ele vai te falar exatamente o que quebrou!
+                MessageBox.Show($"Erro ao concluir venda. Detalhe: {ex.Message}", "Erro Crítico", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -674,45 +676,148 @@ namespace T_PACE
                 this.Close();
             }
         }
-    }
 
-    public class ItemCupom : INotifyPropertyChanged
-    {
-        public int IdProduto { get; set; } // <--- ADICIONE ESTA LINHA AQUI
-
-        private int _quantidade;
-        private decimal _total;
-
-        public string Codigo { get; set; } = string.Empty;
-        public string Descricao { get; set; } = string.Empty;
-        public decimal PrecoUnitario { get; set; }
-        public decimal DescontoUnitario { get; set; }
-
-        public int Quantidade
+        // ==========================================
+        // GERADOR E IMPRESSOR DE CUPOM TÉRMICO (MODO GRÁFICO CORRIGIDO)
+        // ==========================================
+        private void ImprimirRecibo(long idVenda, System.Collections.Generic.List<ItemCupom> itens, decimal subtotal, decimal desconto, decimal total, string metodoPagamento)
         {
-            get => _quantidade;
-            set
+            try
             {
-                _quantidade = value;
-                OnPropertyChanged(nameof(Quantidade));
+                var printDialog = new System.Windows.Controls.PrintDialog();
+
+                var doc = new System.Windows.Documents.FlowDocument();
+                doc.PageWidth = 290;
+                doc.PagePadding = new System.Windows.Thickness(5, 10, 5, 20);
+                doc.FontFamily = new System.Windows.Media.FontFamily("Courier New");
+
+                // 1. FORÇA TEXTO PRETO E SÓLIDO (Evita que a impressora térmica deixe a letra apagada)
+                doc.Foreground = System.Windows.Media.Brushes.Black;
+                System.Windows.Media.TextOptions.SetTextFormattingMode(doc, System.Windows.Media.TextFormattingMode.Display);
+                System.Windows.Media.TextOptions.SetTextRenderingMode(doc, System.Windows.Media.TextRenderingMode.Aliased);
+
+                // 2. LOGO DA EMPRESA (Tamanho Reduzido)
+                try
+                {
+                    var uri = new Uri("pack://application:,,,/nota.png", UriKind.Absolute);
+                    var bitmap = new System.Windows.Media.Imaging.BitmapImage(uri);
+                    var img = new System.Windows.Controls.Image
+                    {
+                        Source = bitmap,
+                        Width = 150, // <-- LOGO REDUZIDA (era 120)
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        Margin = new System.Windows.Thickness(0, 0, 0, 10)
+                    };
+                    // Força a imagem a imprimir com mais nitidez
+                    System.Windows.Media.RenderOptions.SetBitmapScalingMode(img, System.Windows.Media.BitmapScalingMode.HighQuality);
+                    doc.Blocks.Add(new System.Windows.Documents.BlockUIContainer(img));
+                }
+                catch { }
+
+                // 3. CABEÇALHO (Em Negrito para ficar bem escuro)
+                var pCabecalho = new System.Windows.Documents.Paragraph();
+                pCabecalho.Margin = new Thickness(0, 0, 0, 10);
+                pCabecalho.TextAlignment = TextAlignment.Center;
+                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("T-PACE - FRENTE DE CAIXA\n") { FontWeight = FontWeights.Black, FontSize = 13, FontFamily = new System.Windows.Media.FontFamily("Segoe UI") });
+                pCabecalho.Inlines.Add(new System.Windows.Documents.Run($"Data: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n") { FontWeight = FontWeights.Bold, FontSize = 11, FontFamily = new System.Windows.Media.FontFamily("Segoe UI") });
+                pCabecalho.Inlines.Add(new System.Windows.Documents.Run($"Pedido Nº: {idVenda:D6}\n") { FontWeight = FontWeights.Bold, FontSize = 11, FontFamily = new System.Windows.Media.FontFamily("Segoe UI") });
+                pCabecalho.Inlines.Add(new System.Windows.Documents.Run(new string('-', 38)) { FontWeight = FontWeights.Bold, FontSize = 11 });
+                doc.Blocks.Add(pCabecalho);
+
+                // 4. LISTA DE ITENS
+                var pItens = new System.Windows.Documents.Paragraph();
+                pItens.Margin = new Thickness(0);
+                pItens.Inlines.Add(new System.Windows.Documents.Run("QTD  DESCRIÇÃO      V.UN     TOTAL\n") { FontWeight = FontWeights.Black, FontSize = 11 });
+
+                foreach (var item in itens)
+                {
+                    string qtd = item.Quantidade.ToString("0.#").PadRight(4);
+                    string desc = item.Descricao.Length > 14 ? item.Descricao.Substring(0, 14) : item.Descricao.PadRight(14);
+                    string vUn = item.PrecoUnitario.ToString("N2").PadLeft(8);
+                    string tot = item.Total.ToString("N2").PadLeft(9);
+
+                    // Adicionando os itens em Negrito
+                    pItens.Inlines.Add(new System.Windows.Documents.Run($"{qtd} {desc} {vUn} {tot}\n") { FontWeight = FontWeights.Bold, FontSize = 11 });
+                }
+                doc.Blocks.Add(pItens);
+
+                doc.Blocks.Add(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(new string('-', 38))) { FontWeight = FontWeights.Bold, Margin = new Thickness(0), FontSize = 11 });
+
+                // 5. TOTAIS E PAGAMENTO (Correção da Quebra de Linha do R$)
+                var pTotais = new System.Windows.Documents.Paragraph();
+                pTotais.Margin = new Thickness(0, 5, 0, 10);
+
+                string txtSubtotal = $"R$ {subtotal:N2}";
+                pTotais.Inlines.Add(new System.Windows.Documents.Run("Subtotal:".PadRight(38 - txtSubtotal.Length) + txtSubtotal + "\n") { FontWeight = FontWeights.Bold, FontSize = 11 });
+
+                string txtDesconto = $"R$ {desconto:N2}";
+                pTotais.Inlines.Add(new System.Windows.Documents.Run("Descontos:".PadRight(38 - txtDesconto.Length) + txtDesconto + "\n") { FontWeight = FontWeights.Bold, FontSize = 11 });
+
+                string txtTotal = $"R$ {total:N2}";
+                // A matemática aqui prevê o tamanho exato da fonte 14 para garantir que o TOTAL e o valor caibam na mesma linha
+                string linhaTotal = "TOTAL:".PadRight(30 - txtTotal.Length) + txtTotal + "\n";
+                pTotais.Inlines.Add(new System.Windows.Documents.Run(linhaTotal) { FontWeight = FontWeights.Black, FontSize = 14 });
+
+                pTotais.Inlines.Add(new System.Windows.Documents.Run($"Pagamento: {metodoPagamento.ToUpper()}") { FontWeight = FontWeights.Bold, FontSize = 11 });
+                doc.Blocks.Add(pTotais);
+
+                doc.Blocks.Add(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(new string('-', 38))) { FontWeight = FontWeights.Bold, Margin = new Thickness(0), FontSize = 11 });
+
+                // 6. RODAPÉ
+                var pRodape = new System.Windows.Documents.Paragraph();
+                pRodape.Margin = new Thickness(0, 5, 0, 30);
+                pRodape.TextAlignment = TextAlignment.Center;
+                pRodape.Inlines.Add(new System.Windows.Documents.Run("OBRIGADO PELA PREFERÊNCIA!\n") { FontWeight = FontWeights.Black, FontFamily = new System.Windows.Media.FontFamily("Segoe UI"), FontSize = 12 });
+                pRodape.Inlines.Add(new System.Windows.Documents.Run("Este não é um documento fiscal.") { FontWeight = FontWeights.Bold, FontFamily = new System.Windows.Media.FontFamily("Segoe UI"), FontSize = 11 });
+                doc.Blocks.Add(pRodape);
+
+                // Envia para a impressora padrão
+                printDialog.PrintDocument(((System.Windows.Documents.IDocumentPaginatorSource)doc).DocumentPaginator, $"Recibo T-PACE {idVenda}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Não foi possível imprimir o cupom.\nVerifique se a impressora padrão está ligada.\n\nDetalhe: {ex.Message}", "Erro de Impressão", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
-        public decimal Total
+        public class ItemCupom : INotifyPropertyChanged
         {
-            get => _total;
-            set
+            public int IdProduto { get; set; } // <--- ADICIONE ESTA LINHA AQUI
+
+            private int _quantidade;
+            private decimal _total;
+
+            public string Codigo { get; set; } = string.Empty;
+            public string Descricao { get; set; } = string.Empty;
+            public decimal PrecoUnitario { get; set; }
+            public decimal DescontoUnitario { get; set; }
+
+            public int Quantidade
             {
-                _total = value;
-                OnPropertyChanged(nameof(Total));
+                get => _quantidade;
+                set
+                {
+                    _quantidade = value;
+                    OnPropertyChanged(nameof(Quantidade));
+                }
             }
-        }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
+            public decimal Total
+            {
+                get => _total;
+                set
+                {
+                    _total = value;
+                    OnPropertyChanged(nameof(Total));
+                }
+            }
 
-        protected void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            public event PropertyChangedEventHandler? PropertyChanged;
+
+            protected void OnPropertyChanged(string propertyName)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
     }
 }
