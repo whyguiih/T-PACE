@@ -813,7 +813,21 @@ namespace T_PACE
                 doc.Blocks.Add(pTotais);
 
                 doc.Blocks.Add(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(new string('-', 38))) { FontWeight = FontWeights.Bold, Margin = new Thickness(0), FontSize = 11 });
+                // 5.5 CÓDIGO DE BARRAS DA VENDA (ID)
+                try
+                {
+                    // Converte o ID para um formato fixo de 6 dígitos (ex: 000042)
+                    var imgBarcode = GerarCodigoBarrasCode39(idVenda.ToString("D6"));
+                    doc.Blocks.Add(new System.Windows.Documents.BlockUIContainer(imgBarcode));
 
+                    var pIdVenda = new System.Windows.Documents.Paragraph();
+                    pIdVenda.Margin = new Thickness(0, 0, 0, 10);
+                    pIdVenda.TextAlignment = TextAlignment.Center;
+                    pIdVenda.Inlines.Add(new System.Windows.Documents.Run(idVenda.ToString("D6")) { FontFamily = new System.Windows.Media.FontFamily("Courier New"), FontSize = 12, FontWeight = FontWeights.Black });
+                    doc.Blocks.Add(pIdVenda);
+                }
+                catch { }
+                doc.Blocks.Add(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(new string('-', 38))) { FontWeight = FontWeights.Bold, Margin = new Thickness(0), FontSize = 11 });
                 // 6. RODAPÉ
                 var pRodape = new System.Windows.Documents.Paragraph();
                 pRodape.Margin = new Thickness(0, 5, 0, 30);
@@ -829,6 +843,69 @@ namespace T_PACE
             {
                 MessageBox.Show($"Não foi possível imprimir o cupom.\nVerifique se a impressora padrão está ligada.\n\nDetalhe: {ex.Message}", "Erro de Impressão", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
+        }
+
+        // ==========================================
+        // GERADOR NATIVO DE CÓDIGO DE BARRAS (CODE 39)
+        // ==========================================
+        private System.Windows.Controls.Image GerarCodigoBarrasCode39(string texto)
+        {
+            string[] padroes = new string[] {
+                "bwbWBwBwb", "BwbWbwbwB", "bwBWbwbwB", "BwBWbwbwb", "bwbWBwbwB",
+                "BwbWBwbwb", "bwBWBwbwb", "bwbWbwBwB", "BwbWbwBwb", "bwBWbwBwb"
+            };
+            string asterisco = "bWbwBwBwb"; // Caractere Start/Stop obrigatório
+
+            string dados = $"*{texto}*";
+            int barraMagra = 2; // Espessura da linha fina em pixels
+            int barraLarga = 5; // Espessura da linha grossa em pixels
+            int altura = 50;    // Altura do código de barras
+
+            int larguraTotal = 0;
+            foreach (char c in dados)
+            {
+                string padrao = c == '*' ? asterisco : padroes[c - '0'];
+                foreach (char p in padrao)
+                    larguraTotal += (p == 'B' || p == 'W') ? barraLarga : barraMagra;
+                larguraTotal += barraMagra; // Espaço em branco entre os caracteres
+            }
+
+            var visual = new System.Windows.Media.DrawingVisual();
+            using (var context = visual.RenderOpen())
+            {
+                // Pinta o fundo de branco
+                context.DrawRectangle(System.Windows.Media.Brushes.White, null, new Rect(0, 0, larguraTotal, altura));
+                int x = 0;
+
+                // Desenha as barras pretas de acordo com a cifra
+                foreach (char c in dados)
+                {
+                    string padrao = c == '*' ? asterisco : padroes[c - '0'];
+                    foreach (char p in padrao)
+                    {
+                        int w = (p == 'B' || p == 'W') ? barraLarga : barraMagra;
+                        if (p == 'B' || p == 'b')
+                            context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, w, altura));
+                        x += w;
+                    }
+                    x += barraMagra;
+                }
+            }
+
+            var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(larguraTotal, altura, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            rtb.Render(visual);
+
+            var img = new System.Windows.Controls.Image
+            {
+                Source = rtb,
+                Width = larguraTotal,
+                Height = altura,
+                Margin = new Thickness(0, 15, 0, 5),
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            // Força a imagem a ficar 100% preta, sem borrões nas beiradas (Anti-aliasing desativado)
+            System.Windows.Media.RenderOptions.SetBitmapScalingMode(img, System.Windows.Media.BitmapScalingMode.NearestNeighbor);
+            return img;
         }
 
         public class ItemCupom : INotifyPropertyChanged
