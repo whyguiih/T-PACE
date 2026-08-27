@@ -36,6 +36,8 @@ namespace T_PACE
         {
             string usuario = txtUsuario.Text?.Trim() ?? string.Empty;
             string senha = txtSenha.Password ?? string.Empty;
+            string entradaTroco = txtFundoTroco.Text.Trim().Replace("R$", "").Replace(" ", "").Replace(".", "").Replace(",", ".");
+            decimal.TryParse(entradaTroco, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal fundoTroco);
 
             if (string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(senha))
             {
@@ -92,7 +94,7 @@ namespace T_PACE
                                     @"INSERT INTO tb_sessao_caixa (id_caixa, id_usuario, data_abertura, valor_fundo_troco, status)
                                        VALUES (@IdCaixa, @IdUsuario, @DataAbertura, @ValorFundoTroco, @Status);
                                        SELECT last_insert_rowid();",
-                                    new { IdCaixa = 1, IdUsuario = Session.CurrentUserId, DataAbertura = now, ValorFundoTroco = 0m, Status = 1 });
+                                    new { IdCaixa = 1, IdUsuario = Session.CurrentUserId, DataAbertura = now, ValorFundoTroco = fundoTroco, Status = 1 });
 
                                 Session.CurrentSessaoCaixaId = Convert.ToInt32(sessaoId);
                             }
@@ -152,7 +154,7 @@ namespace T_PACE
 
                         Session.CurrentSessaoCaixaId = Convert.ToInt32(sessaoId);
                         return true;
-                    }
+                    }                                       
                 }
             }
             catch { }

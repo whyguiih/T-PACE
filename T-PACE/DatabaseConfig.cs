@@ -70,6 +70,9 @@ namespace T_PACE
 
                 // NOVO: Adiciona a coluna para gerenciar a fila de sincronização
                 try { connection.Execute("ALTER TABLE tb_vendas ADD COLUMN sincronizado BOOLEAN DEFAULT 0;"); } catch { /* Ignora se já existir */ }
+
+                // NOVO: Adiciona a coluna para gerenciar a fila da sessão do caixa
+                try { connection.Execute("ALTER TABLE tb_sessao_caixa ADD COLUMN sincronizado BOOLEAN DEFAULT 0;"); } catch { }
             }
         }
     }

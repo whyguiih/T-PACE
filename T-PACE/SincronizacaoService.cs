@@ -210,5 +210,47 @@ namespace T_PACE
                 // Falha silenciosa. Se a internet estiver caída, o erro morre aqui e o sistema tentará de novo na próxima venda.
             }
         }
+        public static async Task SincronizarSessoesCaixaAsync()
+        {
+            try
+            {
+                using (var conn = new SqliteConnection(DatabaseConfig.ConnectionString))
+                {
+                    conn.Open();
+                    // Seleciona sessões novas ou recém-fechadas (0 ou nulo)
+                    var sessoes = conn.Query("SELECT * FROM tb_sessao_caixa WHERE sincronizado = 0 OR sincronizado IS NULL").ToList();
+                    if (sessoes.Count == 0) return;
+
+                    using (var client = new HttpClient())
+                    {
+                        var listaSessoes = sessoes.Select(s => new
+                        {
+                            id = s.id,
+                            id_caixa = s.id_caixa,
+                            id_usuario = s.id_usuario,
+                            data_abertura = Convert.ToDateTime(s.data_abertura).ToString("yyyy-MM-dd HH:mm:ss"),
+                            valor_fundo_troco = s.valor_fundo_troco,
+                            data_fechamento = s.data_fechamento != null ? Convert.ToDateTime(s.data_fechamento).ToString("yyyy-MM-dd HH:mm:ss") : null,
+                            status = s.status,
+                            valor_fechamento = s.valor_fechamento
+                        }).ToList();
+
+                        string json = JsonSerializer.Serialize(listaSessoes);
+                        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                        var response = await client.PostAsync("https://tpace-api.whyguiih.workers.dev/api/app/sessoes", content);
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            foreach (var s in sessoes)
+                            {
+                                conn.Execute("UPDATE tb_sessao_caixa SET sincronizado = 1 WHERE id = @Id", new { Id = s.id });
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
     }
 }

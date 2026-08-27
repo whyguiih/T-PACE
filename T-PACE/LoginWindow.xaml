@@ -111,8 +111,9 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <!-- Linha Nova -->
                         <RowDefinition Height="*" />
-                        <!-- Espaço elástico para a Mensagem de Erro respirar -->
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
@@ -126,19 +127,23 @@
                     </StackPanel>
 
                     <!-- Campo Senha -->
-                    <StackPanel Grid.Row="3" Margin="0,0,0,5">
+                    <StackPanel Grid.Row="3" Margin="0,0,0,15">
                         <TextBlock Text="Senha" Foreground="#4A5568" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <PasswordBox x:Name="txtSenha" Height="45" FontSize="20" Foreground="#2D3748" />
                     </StackPanel>
 
-                    <!-- MENSAGEM DE ERRO (Agora tem um espaço só para ela) -->
-                    <TextBlock Grid.Row="4" x:Name="txtMensagem" 
-                               Foreground="#E53E3E" FontSize="14" FontWeight="Bold" 
-                               VerticalAlignment="Center" HorizontalAlignment="Center" 
-                               TextWrapping="Wrap" TextAlignment="Center" />
+                    <!-- Campo Fundo de Troco Inicial -->
+                    <StackPanel Grid.Row="4" Margin="0,0,0,5">
+                        <TextBlock Text="Fundo Inicial na Gaveta (R$)" Foreground="#4A5568" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBox x:Name="txtFundoTroco" Height="45" FontSize="20" FontWeight="Bold" Foreground="#A45FCE" Text="0,00" />
+                    </StackPanel>
+
+                    <!-- MENSAGEM DE ERRO -->
+                    <TextBlock Grid.Row="5" x:Name="txtMensagem" Foreground="#E53E3E" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
 
                     <!-- Botões -->
-                    <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <!-- Botões continuam iguais -->
                         <Button x:Name="btnCancelar" Style="{StaticResource BtnModerno}" Content="Sair" Width="100" Height="45" Background="#E2E8F0" Foreground="#4A5568" Margin="0,0,15,0" Click="BtnCancelar_Click" IsCancel="True" />
                         <Button x:Name="btnOk" Style="{StaticResource BtnModerno}" Content="Entrar" Width="130" Height="45" Background="#A45FCE" Click="BtnOk_Click" IsDefault="True"/>
                     </StackPanel>

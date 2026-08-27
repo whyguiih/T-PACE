@@ -83,10 +83,10 @@ namespace T_PACE
             {
                 AbrirTelaPagamento();
             }
-            // NOVO: Atalho F9 (Sair do Caixa e Sincronizar)
+            // NOVO: Atalho F9 (Fechamento do Caixa)
             else if (e.Key == Key.F9)
             {
-                await SairDoCaixa();
+                AbrirTelaFechamento();
             }
         }
 
@@ -649,54 +649,83 @@ namespace T_PACE
         }
 
         // ==========================================
-        // LÓGICA DE SAIR DO CAIXA (F19)
+        // LÓGICA DE SAIR DO CAIXA (F9) E FECHAMENTO
         // ==========================================
+        private void AbrirTelaFechamento()
+        {
+            OverlayFechamento.Visibility = Visibility.Visible;
+            txtValorFechamento.Text = "0,00";
+            txtValorFechamento.SelectAll();
+            txtValorFechamento.Focus();
+        }
+
+        private void FecharTelaFechamento()
+        {
+            OverlayFechamento.Visibility = Visibility.Collapsed;
+            txtBusca.Focus();
+        }
+
+        private async void txtValorFechamento_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                FecharTelaFechamento();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                string entrada = txtValorFechamento.Text.Trim().Replace("R$", "").Replace(" ", "").Replace(".", "").Replace(",", ".");
+                decimal.TryParse(entrada, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal valorFechamento);
+
+                // Grava o fechamento no banco de dados local
+                using (var conn = new Microsoft.Data.Sqlite.SqliteConnection(DatabaseConfig.ConnectionString))
+                {
+                    conn.Open();
+                    conn.Execute("UPDATE tb_sessao_caixa SET data_fechamento = @Data, status = 0, valor_fechamento = @Valor, sincronizado = 0 WHERE id = @Id",
+                        new { Data = DateTime.Now, Valor = valorFechamento, Id = Session.CurrentSessaoCaixaId });
+                }
+
+                FecharTelaFechamento();
+                await SairDoCaixa(); // Usa o método original para limpar a tela e deslogar
+            }
+        }
+
         private async Task SairDoCaixa()
         {
-            // Pergunta para evitar acidentes
-            if (MessageBox.Show("Tem certeza que deseja fechar o caixa e sair do sistema?", "Sair do Caixa", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            // Bloqueia a tela e avisa o operador
+            this.IsEnabled = false;
+            txtUltimoNome.Text = "Encerrando Turno...";
+            txtUltimoDetalhes.Text = "Aguarde enquanto os dados são salvos na nuvem.";
+            txtUltimoPreco.Text = "";
+
+            // Força o envio das vendas e SESSÕES DE CAIXA pendentes
+            await SincronizacaoService.SincronizarVendasPendentesAsync();
+            await SincronizacaoService.SincronizarSessoesCaixaAsync();
+
+            // Limpa a Sessão de quem estava logado
+            Session.CurrentUserId = 0;
+            Session.CurrentUserName = string.Empty;
+            Session.CurrentSessaoCaixaId = 0;
+
+            Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            this.Hide();
+
+            var login = new LoginWindow();
+            bool? ok = login.ShowDialog();
+
+            if (ok == true)
             {
-                // 1. Bloqueia a tela e avisa o operador
-                this.IsEnabled = false;
-                txtUltimoNome.Text = "Sincronizando com a nuvem...";
-                txtUltimoDetalhes.Text = "Aguarde enquanto as vendas pendentes são salvas.";
-                txtUltimoPreco.Text = "";
-
-                // 2. Força o envio de qualquer venda feita sem internet que tenha ficado para trás
-                await SincronizacaoService.SincronizarVendasPendentesAsync();
-
-                // 3. Limpa a Sessão de quem estava logado
-                Session.CurrentUserId = 0;
-                Session.CurrentUserName = string.Empty;
-                Session.CurrentSessaoCaixaId = 0;
-
-                // 4. Avisa o Windows que não é para fechar o aplicativo quando essa tela sumir
-                Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-
-                // Esconde a tela do PDV
-                this.Hide();
-
-                // 5. Chama a tela de Login novamente
-                var login = new LoginWindow();
-                bool? ok = login.ShowDialog();
-
-                if (ok == true)
-                {
-                    // Se logou com sucesso de novo (mesmo operador ou outro), cria um PDV novinho
-                    var novaMain = new MainWindow();
-                    Application.Current.MainWindow = novaMain;
-                    Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
-                    novaMain.Show();
-                }
-                else
-                {
-                    // Se fechou a tela de login (apertou no X ou em Sair), desliga o app inteiro
-                    Application.Current.Shutdown();
-                }
-
-                // Remove o PDV velho da memória
-                this.Close();
+                var novaMain = new MainWindow();
+                Application.Current.MainWindow = novaMain;
+                Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
+                novaMain.Show();
             }
+            else
+            {
+                Application.Current.Shutdown();
+            }
+            this.Close();
         }
 
         // ==========================================
