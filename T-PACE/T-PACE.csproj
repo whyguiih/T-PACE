@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net8.0-windows</TargetFramework>
@@ -7,21 +6,19 @@
 		<Nullable>disable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UseWPF>true</UseWPF>
+		<!-- DECLARA O ÍCONE DO APLICATIVO AQUI -->
+		<ApplicationIcon>icone.ico</ApplicationIcon>
 	</PropertyGroup>
-
-	<ItemGroup>
-	  <None Remove="nota.png" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Dapper" Version="2.1.79" />
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
 	</ItemGroup>
 
-	<!-- NOVO: Forçando a logo a ser empacotada no aplicativo -->
 	<ItemGroup>
 		<Resource Include="logo.png" />
 		<Resource Include="nota.png" />
+		<!-- ADICIONE O ÍCONE COMO RECURSO AQUI -->
+		<Resource Include="icone.ico" />
 	</ItemGroup>
-
 </Project>
