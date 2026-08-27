@@ -99,11 +99,11 @@ CREATE TABLE tb_produtos (
     id_filial INTEGER, quantidade_minima DECIMAL(10,3) DEFAULT 10,
     FOREIGN KEY(id_filial) REFERENCES tb_filiais(id)
 );
-INSERT INTO "tb_produtos" ("id","codigo_barras","nome","custo","preco_venda","ncm","cest","aliquotas_imposto","quantidade","valor_promocional","unidade_venda","em_promocao","lote","validade","id_filial","quantidade_minima") VALUES(1,'123456789','produto',25,50,'2202.10.00',' 17.044.00',3,19,35,'Un',0,'45678','',1,10);
+INSERT INTO "tb_produtos" ("id","codigo_barras","nome","custo","preco_venda","ncm","cest","aliquotas_imposto","quantidade","valor_promocional","unidade_venda","em_promocao","lote","validade","id_filial","quantidade_minima") VALUES(1,'123456789','produto',25,50,'2202.10.00',' 17.044.00',3,17,35,'Un',0,'45678','',1,10);
 INSERT INTO "tb_produtos" ("id","codigo_barras","nome","custo","preco_venda","ncm","cest","aliquotas_imposto","quantidade","valor_promocional","unidade_venda","em_promocao","lote","validade","id_filial","quantidade_minima") VALUES(2,'987654321','BigMichi',560,780,'1101.10.00','65.022.00',3,15,56,'Un',0,'56770','',1,10);
 INSERT INTO "tb_produtos" ("id","codigo_barras","nome","custo","preco_venda","ncm","cest","aliquotas_imposto","quantidade","valor_promocional","unidade_venda","em_promocao","lote","validade","id_filial","quantidade_minima") VALUES(3,'7891114158656','garrafa tramontina cinza da larissa',5,99,'3923.30.90','',1,97,12,'Un',1,'1234','',1,10);
-INSERT INTO "tb_produtos" ("id","codigo_barras","nome","custo","preco_venda","ncm","cest","aliquotas_imposto","quantidade","valor_promocional","unidade_venda","em_promocao","lote","validade","id_filial","quantidade_minima") VALUES(6,'7891360677215','garrafa preta owala','',150,'','','',7,100,'Un',0,'','',1,1);
-INSERT INTO "tb_produtos" ("id","codigo_barras","nome","custo","preco_venda","ncm","cest","aliquotas_imposto","quantidade","valor_promocional","unidade_venda","em_promocao","lote","validade","id_filial","quantidade_minima") VALUES(7,'7503002942550','canetão rojo puta da lari','',15,'','','',8479,10,'Un',1,'','2026-08-25',1,1);
+INSERT INTO "tb_produtos" ("id","codigo_barras","nome","custo","preco_venda","ncm","cest","aliquotas_imposto","quantidade","valor_promocional","unidade_venda","em_promocao","lote","validade","id_filial","quantidade_minima") VALUES(6,'7891360677215','garrafa preta owala','',150,'','','',2,100,'Un',0,'','',1,1);
+INSERT INTO "tb_produtos" ("id","codigo_barras","nome","custo","preco_venda","ncm","cest","aliquotas_imposto","quantidade","valor_promocional","unidade_venda","em_promocao","lote","validade","id_filial","quantidade_minima") VALUES(7,'7503002942550','canetão rojo puta da lari','',15,'','','',8460,10,'Un',1,'','2026-08-25',1,1);
 CREATE TABLE tb_entradas_xml (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     chave_nfe VARCHAR(44) UNIQUE,
@@ -127,6 +127,80 @@ CREATE TABLE tb_sessao_caixa (
     FOREIGN KEY(id_usuario) REFERENCES tb_usuarios(id)
 );
 INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(1,1,2,'2026-08-25 08:00:00',100,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(2,1,1,'2026-08-25 19:55:05',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(3,1,1,'2026-08-25 20:00:09',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(4,1,1,'2026-08-25 20:08:08',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(5,1,1,'2026-08-25 20:09:59',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(6,1,1,'2026-08-25 20:15:34',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(7,1,1,'2026-08-25 20:16:31',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(8,1,1,'2026-08-25 20:17:09',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(9,1,1,'2026-08-25 20:26:10',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(10,1,1,'2026-08-25 20:27:40',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(11,1,1,'2026-08-25 20:29:42',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(12,1,1,'2026-08-25 20:36:57',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(13,1,1,'2026-08-25 20:38:32',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(14,1,1,'2026-08-25 20:48:50',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(15,1,2,'2026-08-25 20:49:27',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(16,1,1,'2026-08-25 20:51:59',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(17,1,1,'2026-08-25 21:02:09',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(18,1,1,'2026-08-25 21:06:18',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(19,1,1,'2026-08-25 21:06:42',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(20,1,1,'2026-08-25 21:33:51',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(21,1,1,'2026-08-25 21:40:13',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(22,1,1,'2026-08-25 21:41:37',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(23,1,1,'2026-08-25 21:43:02',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(24,1,1,'2026-08-25 21:54:58',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(25,1,1,'2026-08-25 21:59:19',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(26,1,1,'2026-08-25 22:01:32',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(27,1,1,'2026-08-25 22:03:46',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(28,1,1,'2026-08-25 22:10:53',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(29,1,1,'2026-08-25 22:17:41',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(30,1,1,'2026-08-25 22:18:56',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(31,1,1,'2026-08-25 22:22:14',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(32,1,1,'2026-08-25 22:27:48',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(33,1,1,'2026-08-25 22:46:14',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(34,1,1,'2026-08-25 22:46:44',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(35,1,1,'2026-08-25 22:47:27',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(36,1,1,'2026-08-25 22:52:10',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(37,1,1,'2026-08-25 22:53:03',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(38,1,1,'2026-08-25 23:26:36',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(39,1,1,'2026-08-25 23:29:02',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(40,1,1,'2026-08-25 23:30:23',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(41,1,1,'2026-08-25 23:34:48',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(42,1,1,'2026-08-26 13:17:38',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(43,1,1,'2026-08-26 13:28:34',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(44,1,1,'2026-08-26 13:35:08',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(45,1,1,'2026-08-26 13:35:52',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(46,1,1,'2026-08-27 14:03:11',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(47,1,1,'2026-08-27 14:04:15',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(48,1,1,'2026-08-27 14:12:40',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(49,1,1,'2026-08-27 14:13:32',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(50,1,1,'2026-08-27 14:17:24',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(51,1,1,'2026-08-27 14:19:01',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(52,1,1,'2026-08-27 14:21:04',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(53,1,1,'2026-08-27 14:23:37',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(54,1,1,'2026-08-27 14:29:51',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(55,1,1,'2026-08-27 14:50:03',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(56,1,1,'2026-08-27 14:51:54',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(57,1,1,'2026-08-27 15:13:53',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(58,1,1,'2026-08-27 15:18:04',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(59,1,1,'2026-08-27 15:24:09',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(60,1,1,'2026-08-27 15:26:30',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(61,1,1,'2026-08-27 15:27:38',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(62,1,1,'2026-08-27 15:28:14',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(63,1,1,'2026-08-27 15:28:48',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(64,1,1,'2026-08-27 15:29:14',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(65,1,1,'2026-08-27 15:31:07',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(66,1,1,'2026-08-27 15:53:14',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(67,1,1,'2026-08-27 15:55:07',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(68,1,1,'2026-08-27 15:57:38',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(69,1,1,'2026-08-27 15:58:59',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(70,1,1,'2026-08-27 16:05:54',0,NULL,1,NULL);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(71,1,1,'2026-08-27 16:26:12',0,'2026-08-27 16:26:30',0,50);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(72,1,1,'2026-08-27 16:27:25',0,'2026-08-27 16:28:20',0,0);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(73,1,1,'2026-08-27 16:34:49',0,'2026-08-27 16:35:10',0,740);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(74,1,1,'2026-08-27 16:41:25',0,'2026-08-27 16:41:39',0,0);
+INSERT INTO "tb_sessao_caixa" ("id","id_caixa","id_usuario","data_abertura","valor_fundo_troco","data_fechamento","status","valor_fechamento") VALUES(75,1,1,'2026-08-27 16:42:04',0,'2026-08-27 16:42:29',0,0);
 CREATE TABLE tb_vendas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     id_sessao_caixa INTEGER,
@@ -211,6 +285,12 @@ INSERT INTO "tb_vendas" ("id","id_sessao_caixa","id_cliente","data_hora","subtot
 INSERT INTO "tb_vendas" ("id","id_sessao_caixa","id_cliente","data_hora","subtotal","desconto","total","status","chave_nfe") VALUES(69,NULL,NULL,'2026-08-27 15:56:23',1610,0,1610,'pago',NULL);
 INSERT INTO "tb_vendas" ("id","id_sessao_caixa","id_cliente","data_hora","subtotal","desconto","total","status","chave_nfe") VALUES(70,NULL,NULL,'2026-08-27 15:59:11',1130,0,1130,'pago',NULL);
 INSERT INTO "tb_vendas" ("id","id_sessao_caixa","id_cliente","data_hora","subtotal","desconto","total","status","chave_nfe") VALUES(71,NULL,NULL,'2026-08-27 16:07:10',2525,65,2460,'pago',NULL);
+INSERT INTO "tb_vendas" ("id","id_sessao_caixa","id_cliente","data_hora","subtotal","desconto","total","status","chave_nfe") VALUES(72,NULL,NULL,'2026-08-27 16:26:20',50,0,50,'pago',NULL);
+INSERT INTO "tb_vendas" ("id","id_sessao_caixa","id_cliente","data_hora","subtotal","desconto","total","status","chave_nfe") VALUES(73,NULL,NULL,'2026-08-27 16:27:30',50,0,50,'pago',NULL);
+INSERT INTO "tb_vendas" ("id","id_sessao_caixa","id_cliente","data_hora","subtotal","desconto","total","status","chave_nfe") VALUES(74,73,NULL,'2026-08-27 16:35:02',750,0,750,'pago',NULL);
+INSERT INTO "tb_vendas" ("id","id_sessao_caixa","id_cliente","data_hora","subtotal","desconto","total","status","chave_nfe") VALUES(75,74,NULL,'2026-08-27 16:41:34',75,25,50,'pago',NULL);
+INSERT INTO "tb_vendas" ("id","id_sessao_caixa","id_cliente","data_hora","subtotal","desconto","total","status","chave_nfe") VALUES(76,75,NULL,'2026-08-27 16:42:13',60,20,40,'pago',NULL);
+INSERT INTO "tb_vendas" ("id","id_sessao_caixa","id_cliente","data_hora","subtotal","desconto","total","status","chave_nfe") VALUES(77,75,NULL,'2026-08-27 16:42:26',150,50,100,'pago',NULL);
 CREATE TABLE tb_pagamentos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     id_venda INTEGER,
@@ -290,6 +370,12 @@ INSERT INTO "tb_pagamentos" ("id","id_venda","metodo","valor","cod_autorizacao_t
 INSERT INTO "tb_pagamentos" ("id","id_venda","metodo","valor","cod_autorizacao_tef") VALUES(69,69,'dinheiro',1610,NULL);
 INSERT INTO "tb_pagamentos" ("id","id_venda","metodo","valor","cod_autorizacao_tef") VALUES(70,70,'dinheiro',1130,NULL);
 INSERT INTO "tb_pagamentos" ("id","id_venda","metodo","valor","cod_autorizacao_tef") VALUES(71,71,'cartão de débito',2460,NULL);
+INSERT INTO "tb_pagamentos" ("id","id_venda","metodo","valor","cod_autorizacao_tef") VALUES(72,72,'dinheiro',50,NULL);
+INSERT INTO "tb_pagamentos" ("id","id_venda","metodo","valor","cod_autorizacao_tef") VALUES(73,73,'dinheiro',50,NULL);
+INSERT INTO "tb_pagamentos" ("id","id_venda","metodo","valor","cod_autorizacao_tef") VALUES(74,74,'dinheiro',750,NULL);
+INSERT INTO "tb_pagamentos" ("id","id_venda","metodo","valor","cod_autorizacao_tef") VALUES(75,75,'cartão de crédito',50,NULL);
+INSERT INTO "tb_pagamentos" ("id","id_venda","metodo","valor","cod_autorizacao_tef") VALUES(76,76,'dinheiro',40,NULL);
+INSERT INTO "tb_pagamentos" ("id","id_venda","metodo","valor","cod_autorizacao_tef") VALUES(77,77,'dinheiro',100,NULL);
 CREATE TABLE tb_itens_venda (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     id_venda INTEGER,
@@ -390,6 +476,12 @@ INSERT INTO "tb_itens_venda" ("id","id_venda","id_produto","quantidade","preco_u
 INSERT INTO "tb_itens_venda" ("id","id_venda","id_produto","quantidade","preco_unitario","subtotal") VALUES(88,71,2,1,780,780);
 INSERT INTO "tb_itens_venda" ("id","id_venda","id_produto","quantidade","preco_unitario","subtotal") VALUES(89,71,6,10,150,1500);
 INSERT INTO "tb_itens_venda" ("id","id_venda","id_produto","quantidade","preco_unitario","subtotal") VALUES(90,71,7,13,15,130);
+INSERT INTO "tb_itens_venda" ("id","id_venda","id_produto","quantidade","preco_unitario","subtotal") VALUES(91,72,1,1,50,50);
+INSERT INTO "tb_itens_venda" ("id","id_venda","id_produto","quantidade","preco_unitario","subtotal") VALUES(92,73,1,1,50,50);
+INSERT INTO "tb_itens_venda" ("id","id_venda","id_produto","quantidade","preco_unitario","subtotal") VALUES(93,74,6,5,150,750);
+INSERT INTO "tb_itens_venda" ("id","id_venda","id_produto","quantidade","preco_unitario","subtotal") VALUES(94,75,7,5,15,50);
+INSERT INTO "tb_itens_venda" ("id","id_venda","id_produto","quantidade","preco_unitario","subtotal") VALUES(95,76,7,4,15,40);
+INSERT INTO "tb_itens_venda" ("id","id_venda","id_produto","quantidade","preco_unitario","subtotal") VALUES(96,77,7,10,15,100);
 CREATE TABLE tb_funcionarios (
   id int,
   id_usuario int,
@@ -450,10 +542,10 @@ INSERT INTO "sqlite_sequence" ("name","seq") VALUES('tb_clientes',2);
 INSERT INTO "sqlite_sequence" ("name","seq") VALUES('tb_fornecedores',1);
 INSERT INTO "sqlite_sequence" ("name","seq") VALUES('tb_caixa',1);
 INSERT INTO "sqlite_sequence" ("name","seq") VALUES('tb_produtos',8);
-INSERT INTO "sqlite_sequence" ("name","seq") VALUES('tb_sessao_caixa',1);
-INSERT INTO "sqlite_sequence" ("name","seq") VALUES('tb_vendas',71);
-INSERT INTO "sqlite_sequence" ("name","seq") VALUES('tb_itens_venda',90);
-INSERT INTO "sqlite_sequence" ("name","seq") VALUES('tb_pagamentos',71);
+INSERT INTO "sqlite_sequence" ("name","seq") VALUES('tb_sessao_caixa',75);
+INSERT INTO "sqlite_sequence" ("name","seq") VALUES('tb_vendas',77);
+INSERT INTO "sqlite_sequence" ("name","seq") VALUES('tb_itens_venda',96);
+INSERT INTO "sqlite_sequence" ("name","seq") VALUES('tb_pagamentos',77);
 CREATE INDEX idx_usuarios_nivel_acesso ON tb_usuarios(nivel_acesso);
 CREATE INDEX idx_fornecedores_nome_fantasia ON tb_fornecedores(nome_fantasia);
 CREATE INDEX idx_caixa_id_filial ON tb_caixa(id_filial);

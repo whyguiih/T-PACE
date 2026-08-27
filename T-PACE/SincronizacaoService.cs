@@ -157,6 +157,10 @@ namespace T_PACE
         {
             try
             {
+                // GARANTIA DE INTEGRIDADE: Envia as sessões pendentes ANTES das vendas.
+                // Isso evita que o banco na nuvem recuse a venda por erro de Foreign Key.
+                await SincronizarSessoesCaixaAsync();
+
                 using (var conn = new SqliteConnection(DatabaseConfig.ConnectionString))
                 {
                     conn.Open();
@@ -180,8 +184,8 @@ namespace T_PACE
                             var objVendaNuvem = new
                             {
                                 id = venda.id,
-                                id_sessao_caixa = (int?)null,
-                                id_cliente = venda.id_cliente,
+                                id_sessao_caixa = (long?)venda.id_sessao_caixa, // <-- CAST DE SEGURANÇA ADICIONADO
+                                id_cliente = (long?)venda.id_cliente,
                                 data_hora = Convert.ToDateTime(venda.data_hora).ToString("yyyy-MM-dd HH:mm:ss"),
                                 subtotal = venda.subtotal,
                                 desconto = venda.desconto,
