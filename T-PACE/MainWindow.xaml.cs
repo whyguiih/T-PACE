@@ -547,13 +547,15 @@ namespace T_PACE
 
             string entrada = txtValorRecebido.Text.Trim().Replace("R$", "").Replace(" ", "").Replace(".", "").Replace(",", ".");
             decimal.TryParse(entrada, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal valorRecebido);
-
             if (valorRecebido < totalAPagar)
             {
                 MessageBox.Show("O valor recebido é menor que o total da venda!", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 txtValorRecebido.SelectAll();
                 return;
             }
+
+            // CALCULA O TROCO PARA SAIR NA NOTINHA
+            decimal trocoFinal = valorRecebido - totalAPagar;
 
             // Se por acaso vir nulo, assume "dinheiro" como padrão
             string metodoSelecionado = ((System.Windows.Controls.ComboBoxItem)cmbMetodoPagamento.SelectedItem)?.Content?.ToString() ?? "dinheiro";
@@ -618,7 +620,7 @@ namespace T_PACE
                             // ==========================================
                             // IMPRIMIR O CUPOM DA VENDA
                             // ==========================================
-                            ImprimirRecibo(idVenda, Carrinho.ToList(), subtotalBruto, descontoTotal, totalAPagar, metodoSelecionado);
+                            ImprimirRecibo(idVenda, Carrinho.ToList(), subtotalBruto, descontoTotal, totalAPagar, metodoSelecionado, valorRecebido, trocoFinal);
 
                             // CHAMA O SINCRONIZADOR DE FILA
                             Task.Run(async () => await SincronizacaoService.SincronizarVendasPendentesAsync());
@@ -729,9 +731,9 @@ namespace T_PACE
         }
 
         // ==========================================
-        // GERADOR E IMPRESSOR DE CUPOM TÉRMICO (MODO GRÁFICO CORRIGIDO)
+        // GERADOR E IMPRESSOR DE CUPOM TÉRMICO (ESTILO NFC-e DETALHADO)
         // ==========================================
-        private void ImprimirRecibo(long idVenda, System.Collections.Generic.List<ItemCupom> itens, decimal subtotal, decimal desconto, decimal total, string metodoPagamento)
+        private void ImprimirRecibo(long idVenda, System.Collections.Generic.List<ItemCupom> itens, decimal subtotal, decimal desconto, decimal total, string metodoPagamento, decimal valorRecebido, decimal troco)
         {
             try
             {
@@ -742,81 +744,96 @@ namespace T_PACE
                 doc.PagePadding = new System.Windows.Thickness(5, 10, 5, 20);
                 doc.FontFamily = new System.Windows.Media.FontFamily("Courier New");
 
-                // 1. FORÇA TEXTO PRETO E SÓLIDO (Evita que a impressora térmica deixe a letra apagada)
                 doc.Foreground = System.Windows.Media.Brushes.Black;
                 System.Windows.Media.TextOptions.SetTextFormattingMode(doc, System.Windows.Media.TextFormattingMode.Display);
                 System.Windows.Media.TextOptions.SetTextRenderingMode(doc, System.Windows.Media.TextRenderingMode.Aliased);
 
-                // 2. LOGO DA EMPRESA (Tamanho Reduzido)
+                // 1. LOGO DA EMPRESA
                 try
                 {
-                    var uri = new Uri("pack://application:,,,/nota.png", UriKind.Absolute);
+                    var uri = new Uri("pack://application:,,,/logo.png", UriKind.Absolute);
                     var bitmap = new System.Windows.Media.Imaging.BitmapImage(uri);
                     var img = new System.Windows.Controls.Image
                     {
                         Source = bitmap,
-                        Width = 150, // <-- LOGO REDUZIDA (era 120)
+                        Width = 80,
                         HorizontalAlignment = HorizontalAlignment.Center,
                         Margin = new System.Windows.Thickness(0, 0, 0, 10)
                     };
-                    // Força a imagem a imprimir com mais nitidez
                     System.Windows.Media.RenderOptions.SetBitmapScalingMode(img, System.Windows.Media.BitmapScalingMode.HighQuality);
                     doc.Blocks.Add(new System.Windows.Documents.BlockUIContainer(img));
                 }
                 catch { }
 
-                // 3. CABEÇALHO (Em Negrito para ficar bem escuro)
+                // 2. CABEÇALHO
                 var pCabecalho = new System.Windows.Documents.Paragraph();
-                pCabecalho.Margin = new Thickness(0, 0, 0, 10);
+                pCabecalho.Margin = new Thickness(0, 0, 0, 5);
                 pCabecalho.TextAlignment = TextAlignment.Center;
-                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("T-PACE - FRENTE DE CAIXA\n") { FontWeight = FontWeights.Black, FontSize = 13, FontFamily = new System.Windows.Media.FontFamily("Segoe UI") });
+                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("T-PACE PDV\n") { FontWeight = FontWeights.Black, FontSize = 14, FontFamily = new System.Windows.Media.FontFamily("Segoe UI") });
+                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("DOCUMENTO AUXILIAR DE VENDA\n") { FontWeight = FontWeights.Bold, FontSize = 11, FontFamily = new System.Windows.Media.FontFamily("Segoe UI") });
                 pCabecalho.Inlines.Add(new System.Windows.Documents.Run($"Data: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n") { FontWeight = FontWeights.Bold, FontSize = 11, FontFamily = new System.Windows.Media.FontFamily("Segoe UI") });
                 pCabecalho.Inlines.Add(new System.Windows.Documents.Run($"Pedido Nº: {idVenda:D6}\n") { FontWeight = FontWeights.Bold, FontSize = 11, FontFamily = new System.Windows.Media.FontFamily("Segoe UI") });
                 pCabecalho.Inlines.Add(new System.Windows.Documents.Run(new string('-', 38)) { FontWeight = FontWeights.Bold, FontSize = 11 });
                 doc.Blocks.Add(pCabecalho);
 
-                // 4. LISTA DE ITENS
+                // 3. LISTA DE ITENS (Igual à foto: 2 linhas por item)
                 var pItens = new System.Windows.Documents.Paragraph();
                 pItens.Margin = new Thickness(0);
-                pItens.Inlines.Add(new System.Windows.Documents.Run("QTD  DESCRIÇÃO      V.UN     TOTAL\n") { FontWeight = FontWeights.Black, FontSize = 11 });
+                pItens.Inlines.Add(new System.Windows.Documents.Run("CÓDIGO        DESCRIÇÃO\n") { FontWeight = FontWeights.Bold, FontSize = 11 });
+                pItens.Inlines.Add(new System.Windows.Documents.Run("             QTD  UN   V.UN(R$)  TOTAL(R$)\n") { FontWeight = FontWeights.Bold, FontSize = 11 });
 
                 foreach (var item in itens)
                 {
-                    string qtd = item.Quantidade.ToString("0.#").PadRight(4);
-                    string desc = item.Descricao.Length > 14 ? item.Descricao.Substring(0, 14) : item.Descricao.PadRight(14);
-                    string vUn = item.PrecoUnitario.ToString("N2").PadLeft(8);
-                    string tot = item.Total.ToString("N2").PadLeft(9);
+                    // Linha 1: Código + Descrição
+                    string cod = item.Codigo.Length > 13 ? item.Codigo.Substring(0, 13) : item.Codigo.PadRight(13);
+                    string desc = item.Descricao.Length > 24 ? item.Descricao.Substring(0, 24) : item.Descricao;
+                    pItens.Inlines.Add(new System.Windows.Documents.Run($"{cod} {desc}\n") { FontWeight = FontWeights.Bold, FontSize = 11 });
 
-                    // Adicionando os itens em Negrito
-                    pItens.Inlines.Add(new System.Windows.Documents.Run($"{qtd} {desc} {vUn} {tot}\n") { FontWeight = FontWeights.Bold, FontSize = 11 });
+                    // Linha 2:  Quantidades e Totais alinhados à direita
+                    string qtd = item.Quantidade.ToString("0.000").PadLeft(7);
+                    string un = "UN";
+                    string vUn = item.PrecoUnitario.ToString("N2").PadLeft(8);
+                    string tot = item.Total.ToString("N2");
+
+                    string parteEsquerda = $"   {qtd} {un} X {vUn}";
+                    string linha2 = parteEsquerda.PadRight(38 - tot.Length) + tot + "\n";
+                    pItens.Inlines.Add(new System.Windows.Documents.Run(linha2) { FontSize = 11 });
                 }
                 doc.Blocks.Add(pItens);
-
                 doc.Blocks.Add(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(new string('-', 38))) { FontWeight = FontWeights.Bold, Margin = new Thickness(0), FontSize = 11 });
 
-                // 5. TOTAIS E PAGAMENTO (Correção da Quebra de Linha do R$)
+                // 4. TOTAIS E PAGAMENTO
                 var pTotais = new System.Windows.Documents.Paragraph();
                 pTotais.Margin = new Thickness(0, 5, 0, 10);
 
-                string txtSubtotal = $"R$ {subtotal:N2}";
-                pTotais.Inlines.Add(new System.Windows.Documents.Run("Subtotal:".PadRight(38 - txtSubtotal.Length) + txtSubtotal + "\n") { FontWeight = FontWeights.Bold, FontSize = 11 });
+                string txtQtd = itens.Count.ToString();
+                string txtSubtotal = $"{subtotal:N2}";
+                string txtDesconto = $"{desconto:N2}";
+                string txtTotal = $"{total:N2}";
 
-                string txtDesconto = $"R$ {desconto:N2}";
-                pTotais.Inlines.Add(new System.Windows.Documents.Run("Descontos:".PadRight(38 - txtDesconto.Length) + txtDesconto + "\n") { FontWeight = FontWeights.Bold, FontSize = 11 });
+                pTotais.Inlines.Add(new System.Windows.Documents.Run("Qtde. Total de Itens".PadRight(38 - txtQtd.Length) + txtQtd + "\n") { FontSize = 11 });
+                pTotais.Inlines.Add(new System.Windows.Documents.Run("Valor Total R$".PadRight(38 - txtSubtotal.Length) + txtSubtotal + "\n") { FontSize = 11 });
+                if (desconto > 0)
+                    pTotais.Inlines.Add(new System.Windows.Documents.Run("Descontos R$".PadRight(38 - txtDesconto.Length) + txtDesconto + "\n") { FontSize = 11 });
 
-                string txtTotal = $"R$ {total:N2}";
-                // A matemática aqui prevê o tamanho exato da fonte 14 para garantir que o TOTAL e o valor caibam na mesma linha
-                string linhaTotal = "TOTAL:".PadRight(30 - txtTotal.Length) + txtTotal + "\n";
-                pTotais.Inlines.Add(new System.Windows.Documents.Run(linhaTotal) { FontWeight = FontWeights.Black, FontSize = 14 });
+                // Compensa o tamanho da fonte 12 para não quebrar a margem
+                pTotais.Inlines.Add(new System.Windows.Documents.Run("Valor a Pagar R$".PadRight(34 - txtTotal.Length) + txtTotal + "\n") { FontWeight = FontWeights.Black, FontSize = 12 });
 
-                pTotais.Inlines.Add(new System.Windows.Documents.Run($"Pagamento: {metodoPagamento.ToUpper()}") { FontWeight = FontWeights.Bold, FontSize = 11 });
+                pTotais.Inlines.Add(new System.Windows.Documents.Run("\nFORMA DE PAGAMENTO".PadRight(25) + "VALOR PAGO R$\n") { FontWeight = FontWeights.Bold, FontSize = 11 });
+
+                string descPag = metodoPagamento.ToUpper();
+                if (descPag.Length > 20) descPag = descPag.Substring(0, 20);
+                string txtRecebido = $"{valorRecebido:N2}";
+                string txtTroco = $"{troco:N2}";
+
+                pTotais.Inlines.Add(new System.Windows.Documents.Run(descPag.PadRight(38 - txtRecebido.Length) + txtRecebido + "\n") { FontSize = 11 });
+                pTotais.Inlines.Add(new System.Windows.Documents.Run("Troco R$".PadRight(38 - txtTroco.Length) + txtTroco + "\n") { FontSize = 11 });
                 doc.Blocks.Add(pTotais);
-
                 doc.Blocks.Add(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(new string('-', 38))) { FontWeight = FontWeights.Bold, Margin = new Thickness(0), FontSize = 11 });
-                // 5.5 CÓDIGO DE BARRAS DA VENDA (ID)
+
+                // 5. CÓDIGO DE BARRAS NATIVO DA VENDA
                 try
                 {
-                    // Converte o ID para um formato fixo de 6 dígitos (ex: 000042)
                     var imgBarcode = GerarCodigoBarrasCode39(idVenda.ToString("D6"));
                     doc.Blocks.Add(new System.Windows.Documents.BlockUIContainer(imgBarcode));
 
@@ -827,7 +844,7 @@ namespace T_PACE
                     doc.Blocks.Add(pIdVenda);
                 }
                 catch { }
-                doc.Blocks.Add(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(new string('-', 38))) { FontWeight = FontWeights.Bold, Margin = new Thickness(0), FontSize = 11 });
+
                 // 6. RODAPÉ
                 var pRodape = new System.Windows.Documents.Paragraph();
                 pRodape.Margin = new Thickness(0, 5, 0, 30);
@@ -836,12 +853,11 @@ namespace T_PACE
                 pRodape.Inlines.Add(new System.Windows.Documents.Run("Este não é um documento fiscal.") { FontWeight = FontWeights.Bold, FontFamily = new System.Windows.Media.FontFamily("Segoe UI"), FontSize = 11 });
                 doc.Blocks.Add(pRodape);
 
-                // Envia para a impressora padrão
                 printDialog.PrintDocument(((System.Windows.Documents.IDocumentPaginatorSource)doc).DocumentPaginator, $"Recibo T-PACE {idVenda}");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Não foi possível imprimir o cupom.\nVerifique se a impressora padrão está ligada.\n\nDetalhe: {ex.Message}", "Erro de Impressão", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show($"Não foi possível imprimir o cupom.\n\nDetalhe: {ex.Message}", "Erro de Impressão", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -854,12 +870,12 @@ namespace T_PACE
                 "bwbWBwBwb", "BwbWbwbwB", "bwBWbwbwB", "BwBWbwbwb", "bwbWBwbwB",
                 "BwbWBwbwb", "bwBWBwbwb", "bwbWbwBwB", "BwbWbwBwb", "bwBWbwBwb"
             };
-            string asterisco = "bWbwBwBwb"; // Caractere Start/Stop obrigatório
+            string asterisco = "bWbwBwBwb"; // Caractere Start/Stop (Obrigatório em todo leitor)
 
             string dados = $"*{texto}*";
-            int barraMagra = 2; // Espessura da linha fina em pixels
-            int barraLarga = 5; // Espessura da linha grossa em pixels
-            int altura = 50;    // Altura do código de barras
+            int barraMagra = 2; // Espessura da linha fina
+            int barraLarga = 6; // Espessura da linha grossa (ideal para leitura de celular e laser)
+            int altura = 45;
 
             int larguraTotal = 0;
             foreach (char c in dados)
@@ -867,7 +883,7 @@ namespace T_PACE
                 string padrao = c == '*' ? asterisco : padroes[c - '0'];
                 foreach (char p in padrao)
                     larguraTotal += (p == 'B' || p == 'W') ? barraLarga : barraMagra;
-                larguraTotal += barraMagra; // Espaço em branco entre os caracteres
+                larguraTotal += barraMagra; // Espaço em branco separador
             }
 
             var visual = new System.Windows.Media.DrawingVisual();
@@ -877,7 +893,7 @@ namespace T_PACE
                 context.DrawRectangle(System.Windows.Media.Brushes.White, null, new Rect(0, 0, larguraTotal, altura));
                 int x = 0;
 
-                // Desenha as barras pretas de acordo com a cifra
+                // Desenha a sequência de barras
                 foreach (char c in dados)
                 {
                     string padrao = c == '*' ? asterisco : padroes[c - '0'];
@@ -903,7 +919,8 @@ namespace T_PACE
                 Margin = new Thickness(0, 15, 0, 5),
                 HorizontalAlignment = HorizontalAlignment.Center
             };
-            // Força a imagem a ficar 100% preta, sem borrões nas beiradas (Anti-aliasing desativado)
+
+            // Renderização especial para manter o contraste das barras térmicas
             System.Windows.Media.RenderOptions.SetBitmapScalingMode(img, System.Windows.Media.BitmapScalingMode.NearestNeighbor);
             return img;
         }
