@@ -99,7 +99,17 @@
                         </Border>
 
                         <TextBlock Text="T-PACE" FontSize="40" FontWeight="Black" Foreground="White" HorizontalAlignment="Center"/>
-                        <TextBlock Text="FRENTE DE CAIXA" FontSize="17" FontWeight="SemiBold" Foreground="#D6C4E8" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                        <StackPanel Grid.Row="1" Margin="0,0,0,30">
+                            <TextBlock Text="FRENTE DE CAIXA" FontSize="17" FontWeight="SemiBold" Foreground="#D6C4E8" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                            <!-- Botão de Atualização (Nasce invisível) -->
+                            <Button x:Name="btnAtualizar" Visibility="Collapsed" Content="✨ATUALIZAR T-PACE" Background="#48BB78" Foreground="White" FontWeight="Black" FontSize="14" Height="40" Cursor="Hand" Click="BtnAtualizar_Click" BorderThickness="0">
+                                <Button.Resources>
+                                    <Style TargetType="Border">
+                                        <Setter Property="CornerRadius" Value="8"/>
+                                    </Style>
+                                </Button.Resources>
+                            </Button>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 

@@ -12,7 +12,7 @@ namespace T_PACE
     {
         // URL da rota POST do seu Cloudflare Worker que faz a autenticação
         private static readonly string apiLoginUrl = "https://tpace-api.whyguiih.workers.dev/api/web/login";
-
+        private const string VersaoAtualApp = "0.9.5"; // Controle a versão do seu app compilado aqui!
         public LoginWindow()
         {
             InitializeComponent();
@@ -25,6 +25,8 @@ namespace T_PACE
         {
             txtUsuario.Focus();
             txtUsuario.SelectAll();
+
+            VerificarAtualizacao(); // Roda em segundo plano sem travar a tela
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
@@ -159,6 +161,105 @@ namespace T_PACE
             }
             catch { }
             return false;
+        }
+        private async void VerificarAtualizacao()
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    // Faz a requisição de forma segura
+                    var response = await client.GetAsync("https://tpace-api.whyguiih.workers.dev/api/app/versao");
+
+                    // Só continua se a API respondeu com sucesso (Ignora os 404 e 500)
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var jsonString = await response.Content.ReadAsStringAsync();
+                        using (var json = JsonDocument.Parse(jsonString))
+                        {
+                            string versaoNuvem = json.RootElement.GetProperty("versao").GetString();
+                            string linkDownload = json.RootElement.GetProperty("link_download").GetString();
+
+                            if (!string.IsNullOrEmpty(versaoNuvem))
+                            {
+                                // Converte os textos para o motor de versões do Windows
+                                Version vNuvem = new Version(versaoNuvem);
+                                Version vLocal = new Version(VersaoAtualApp);
+
+                                // MATEMÁTICA: O botão SÓ aparece se a versão da nuvem for ESTRITAMENTE MAIOR
+                                if (vNuvem > vLocal)
+                                {
+                                    btnAtualizar.Visibility = Visibility.Visible;
+                                    btnAtualizar.Content = $" Atualização disponível: (v{versaoNuvem}) ";
+                                    btnAtualizar.Tag = linkDownload;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Falha silenciosa: Sem internet, Cloudflare fora do ar, etc.
+            }
+        }
+
+        private async void BtnAtualizar_Click(object sender, RoutedEventArgs e)
+        {
+            string link = btnAtualizar.Tag?.ToString();
+            if (string.IsNullOrEmpty(link)) return;
+
+            try
+            {
+                // Muda o visual do botão para dar feedback ao usuário
+                btnAtualizar.Content = " Baixando atualização... ";
+                btnAtualizar.IsEnabled = false;
+
+                // 1. Caminhos ocultos para o download
+                string tempPasta = System.IO.Path.GetTempPath();
+                string zipPath = System.IO.Path.Combine(tempPasta, "tpace_update.zip");
+                string batPath = System.IO.Path.Combine(tempPasta, "atualizador.bat");
+
+                string appPath = AppDomain.CurrentDomain.BaseDirectory;
+                string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+
+                // 2. Baixa o arquivo ZIP silenciosamente
+                using (var client = new HttpClient())
+                {
+                    var bytes = await client.GetByteArrayAsync(link);
+                    await System.IO.File.WriteAllBytesAsync(zipPath, bytes);
+                }
+
+                btnAtualizar.Content = " Instalando... ";
+
+                // 3. Cria o script "fantasma" que vai sobrescrever os arquivos
+                string script = $@"@echo off
+timeout /t 2 /nobreak > NUL
+powershell.exe -windowstyle hidden -Command ""Expand-Archive -Path '{zipPath}' -DestinationPath '{appPath}' -Force""
+del ""{zipPath}""
+start """" ""{exePath}""
+del ""%~f0""
+";
+                System.IO.File.WriteAllText(batPath, script);
+
+                // 4. Inicia o script de forma oculta e fecha o T-PACE atual!
+                var startInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = batPath,
+                    UseShellExecute = true,
+                    CreateNoWindow = true,
+                    WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
+                };
+                System.Diagnostics.Process.Start(startInfo);
+
+                Application.Current.Shutdown();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Não foi possível atualizar automaticamente. Detalhe: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                btnAtualizar.Content = " Erro. ";
+                btnAtualizar.IsEnabled = true;
+            }
         }
     } // <-- FIM DA CLASSE LoginWindow
 
