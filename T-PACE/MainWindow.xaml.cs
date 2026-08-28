@@ -731,10 +731,7 @@ namespace T_PACE
         }
 
         // ==========================================
-        // GERADOR E IMPRESSOR DE CUPOM TÉRMICO (ESTILO NFC-e DETALHADO)
-        // ==========================================
-        // ==========================================
-        // GERADOR E IMPRESSOR DE CUPOM TÉRMICO (NFC-e PERFEITAMENTE ALINHADO)
+        // GERADOR E IMPRESSOR DE CUPOM TÉRMICO (NFC-e CORRIGIDO E ALINHADO)
         // ==========================================
         private void ImprimirRecibo(long idVenda, System.Collections.Generic.List<ItemCupom> itens, decimal subtotal, decimal desconto, decimal total, string metodoPagamento, decimal valorRecebido, decimal troco)
         {
@@ -742,77 +739,103 @@ namespace T_PACE
             {
                 var printDialog = new System.Windows.Controls.PrintDialog();
                 var doc = new System.Windows.Documents.FlowDocument();
-                doc.PageWidth = 300; // Tamanho ideal para bobinas de 80mm com 42 colunas
-                doc.PagePadding = new System.Windows.Thickness(10, 10, 10, 20);
+
+                // Reduzido para 275 e margens zeradas nas laterais para respeitar os 72mm da impressora térmica
+                doc.PageWidth = 275;
+                doc.PagePadding = new System.Windows.Thickness(0, 10, 0, 20);
                 doc.FontFamily = new System.Windows.Media.FontFamily("Courier New");
                 doc.Foreground = System.Windows.Media.Brushes.Black;
+
+                // RESOLVE O PROBLEMA DE TEXTO FINO: Força TUDO a ser impresso em Negrito
+                doc.FontWeight = FontWeights.Bold;
+
                 System.Windows.Media.TextOptions.SetTextFormattingMode(doc, System.Windows.Media.TextFormattingMode.Display);
                 System.Windows.Media.TextOptions.SetTextRenderingMode(doc, System.Windows.Media.TextRenderingMode.Aliased);
 
-                int colunas = 42;
+                // Reduzido para 36 colunas para caber na área de impressão sem quebrar a linha e estragar o alinhamento
+                int colunas = 36;
 
-                // 1. CABEÇALHO (Centralizado)
+                // 1. LOGO DA EMPRESA (Usando nota.png)
+                try
+                {
+                    var uri = new Uri("pack://application:,,,/nota.png", UriKind.Absolute);
+                    var bitmap = new System.Windows.Media.Imaging.BitmapImage(uri);
+                    var img = new System.Windows.Controls.Image
+                    {
+                        Source = bitmap,
+                        Width = 140, // Tamanho da logo
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        Margin = new System.Windows.Thickness(0, 0, 0, 10)
+                    };
+                    System.Windows.Media.RenderOptions.SetBitmapScalingMode(img, System.Windows.Media.BitmapScalingMode.HighQuality);
+                    doc.Blocks.Add(new System.Windows.Documents.BlockUIContainer(img));
+                }
+                catch { }
+
+                // 2. CABEÇALHO (Centralizado)
                 var pCabecalho = new System.Windows.Documents.Paragraph();
                 pCabecalho.TextAlignment = TextAlignment.Center;
-                pCabecalho.LineHeight = 14;
+                pCabecalho.LineHeight = 16;
                 pCabecalho.Margin = new Thickness(0, 0, 0, 10);
 
-                // Dados Fixos da Loja (Você pode ajustar conforme a foto depois)
-                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("T-PACE FRENTE DE CAIXA\n") { FontWeight = FontWeights.Bold, FontSize = 12 });
-                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("CNPJ: 00.000.000/0000-00\nIE: 123456789\n") { FontSize = 10 });
-                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("Endereço da Empresa, 123, Centro\nGaribaldi, RS\n") { FontSize = 10 });
-                pCabecalho.Inlines.Add(new System.Windows.Documents.Run(new string('-', colunas) + "\n") { FontSize = 10 });
-                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("DOCUMENTO AUXILIAR DA NOTA FISCAL\nDE CONSUMIDOR ELETRONICA\n") { FontWeight = FontWeights.Bold, FontSize = 10 });
-                pCabecalho.Inlines.Add(new System.Windows.Documents.Run(new string('-', colunas) + "\n") { FontSize = 10 });
+                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("CNPJ: 00.000.000/0000-00\nIE: 123456789\n") { FontSize = 11 });
+                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("Rua Buarque de Macedo, 3158,\nCentro, Garibaldi-RS\n") { FontSize = 11 });
+                pCabecalho.Inlines.Add(new System.Windows.Documents.Run(new string('-', colunas) + "\n") { FontSize = 11 });
+                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("DOCUMENTO AUXILIAR DA NOTA FISCAL\nDE CONSUMIDOR ELETRONICA\n") { FontWeight = FontWeights.Black, FontSize = 11 });
+                pCabecalho.Inlines.Add(new System.Windows.Documents.Run(new string('-', colunas)) { FontSize = 11 });
                 doc.Blocks.Add(pCabecalho);
 
-                // 2. CORPO DO CUPOM (String monolítica para blindar o alinhamento)
+                // 3. CORPO DO CUPOM (Sem código do produto)
                 var sb = new System.Text.StringBuilder();
 
-                sb.AppendLine("CODIGO        DESCRICAO");
-                sb.AppendLine("           QTD UN   VL.UN(R$)   TOTAL(R$)");
+                sb.AppendLine("DESCRIÇÃO                   TOTAL(R$)");
 
                 foreach (var item in itens)
                 {
-                    // Força corte se o nome for gigante ou preenche se for curto
-                    string cod = item.Codigo.Length > 13 ? item.Codigo.Substring(0, 13) : item.Codigo.PadRight(13);
-                    string desc = item.Descricao.Length > 28 ? item.Descricao.Substring(0, 28) : item.Descricao;
-                    sb.AppendLine($"{cod} {desc}");
+                    sb.AppendLine();
+                    // Descrição na primeira linha
+                    string desc = item.Descricao.Length > colunas ? item.Descricao.Substring(0, colunas) : item.Descricao;
+                    sb.AppendLine(desc);
 
-                    string qtd = item.Quantidade.ToString("0.000").PadLeft(6);
+                    // Quantidade, UN e Preço na esquerda, Total na direita
+                    string qtd = item.Quantidade.ToString("0.###");
                     string un = "UN";
-                    string vlUn = item.PrecoUnitario.ToString("N2").PadLeft(9);
-                    string tot = item.Total.ToString("N2").PadLeft(10);
+                    string vlUn = item.PrecoUnitario.ToString("N2");
+                    string tot = item.Total.ToString("N2");
 
-                    // Concatena as variáveis formatadas com espaços travados
-                    string linhaValores = $"{qtd} {un}  {vlUn}  {tot}";
-                    sb.AppendLine(linhaValores.PadLeft(colunas));
+                    string linhaValores = $"{qtd} {un} X {vlUn}";
+                    sb.AppendLine(AlinharLinha(linhaValores, tot, colunas));
                 }
                 sb.AppendLine(new string('-', colunas));
 
-                // Totais
-                sb.AppendLine(AlinharLinha("Qtde. Total de Itens", itens.Count.ToString(), colunas));
-                sb.AppendLine(AlinharLinha("Valor Total R$", subtotal.ToString("N2"), colunas));
+                // Totais (Agora soma a quantidade real de itens, e não a quantidade de linhas!)
+                decimal qtdeTotalItens = itens.Sum(i => i.Quantidade);
+                sb.AppendLine(AlinharLinha("Qtde. Total de Itens", qtdeTotalItens.ToString("0.###"), colunas));
+                sb.AppendLine(AlinharLinha("Subtotal R$", subtotal.ToString("N2"), colunas));
                 if (desconto > 0)
                     sb.AppendLine(AlinharLinha("Descontos R$", desconto.ToString("N2"), colunas));
 
-                doc.Blocks.Add(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(sb.ToString())) { FontSize = 10, Margin = new Thickness(0), LineHeight = 14 });
+                doc.Blocks.Add(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(sb.ToString())) { FontSize = 11, Margin = new Thickness(0), LineHeight = 16 });
 
-                // 3. VALOR A PAGAR EM DESTAQUE
+                // 4. VALOR A PAGAR EM DESTAQUE
                 var pTotal = new System.Windows.Documents.Paragraph();
-                pTotal.Margin = new Thickness(0);
-                pTotal.Inlines.Add(new System.Windows.Documents.Run(AlinharLinha("Valor a Pagar R$", total.ToString("N2"), colunas) + "\n") { FontWeight = FontWeights.Black, FontSize = 11 });
+                pTotal.Margin = new Thickness(0, 2, 0, 10);
+                pTotal.TextAlignment = TextAlignment.Left; // Alinha nativamente à direita, sem usar espaços falsos
+
+                // Texto normal, número gigante e chamativo!
+                pTotal.Inlines.Add(new System.Windows.Documents.Run("VALOR TOTAL  R$ ") { FontSize = 11 });
+                pTotal.Inlines.Add(new System.Windows.Documents.Run(total.ToString("N2") + "\n") { FontWeight = FontWeights.Black, FontSize = 16 });
                 doc.Blocks.Add(pTotal);
 
-                // 4. FORMA DE PAGAMENTO E TROCO
+                // 5. FORMA DE PAGAMENTO E TROCO
                 var sbPagamento = new System.Text.StringBuilder();
                 sbPagamento.AppendLine(AlinharLinha("FORMA PAGAMENTO", "VALOR PAGO R$", colunas));
                 sbPagamento.AppendLine(AlinharLinha(metodoPagamento.ToUpper(), valorRecebido.ToString("N2"), colunas));
                 sbPagamento.AppendLine(AlinharLinha("Troco R$", troco.ToString("N2"), colunas));
                 sbPagamento.AppendLine(new string('-', colunas));
-                doc.Blocks.Add(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(sbPagamento.ToString())) { FontSize = 10, Margin = new Thickness(0), LineHeight = 14 });
+                doc.Blocks.Add(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(sbPagamento.ToString())) { FontSize = 11, Margin = new Thickness(0), LineHeight = 16 });
 
-                // 5. CÓDIGO DE BARRAS DA VENDA E RODAPÉ
+                // 6. CÓDIGO DE BARRAS DA VENDA E RODAPÉ
                 try
                 {
                     var imgBarcode = GerarCodigoBarrasCode39(idVenda.ToString("D6"));
@@ -821,10 +844,10 @@ namespace T_PACE
                     var pRodape = new System.Windows.Documents.Paragraph();
                     pRodape.Margin = new Thickness(0, 0, 0, 10);
                     pRodape.TextAlignment = TextAlignment.Center;
-                    pRodape.Inlines.Add(new System.Windows.Documents.Run(idVenda.ToString("D6") + "\n") { FontSize = 11, FontWeight = FontWeights.Black });
+                    pRodape.Inlines.Add(new System.Windows.Documents.Run(idVenda.ToString("D6") + "\n") { FontSize = 12, FontWeight = FontWeights.Black });
 
-                    pRodape.Inlines.Add(new System.Windows.Documents.Run($"\nData: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n") { FontSize = 10 });
-                    pRodape.Inlines.Add(new System.Windows.Documents.Run("OBRIGADO PELA PREFERENCIA!") { FontWeight = FontWeights.Bold, FontSize = 10 });
+                    pRodape.Inlines.Add(new System.Windows.Documents.Run($"\nData: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n") { FontSize = 11 });
+                    pRodape.Inlines.Add(new System.Windows.Documents.Run("OBRIGADO PELA PREFERENCIA!") { FontWeight = FontWeights.Black, FontSize = 11 });
                     doc.Blocks.Add(pRodape);
                 }
                 catch { }
@@ -837,10 +860,9 @@ namespace T_PACE
             }
         }
 
-        // Função Matemática Auxiliar: Ela preenche espaços exatamente até a beirada direita do papel
+        // Função Matemática Auxiliar
         private string AlinharLinha(string esquerda, string direita, int totalColunas)
         {
-            // Se o texto for grande demais, ele corta a parte da esquerda para garantir que o valor da direita caiba
             if (esquerda.Length + direita.Length >= totalColunas)
                 esquerda = esquerda.Substring(0, totalColunas - direita.Length - 1);
 
