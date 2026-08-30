@@ -43,37 +43,26 @@ export default {
             try {
                 const body = await request.json();
                 const stmts = [];
-
-                // 1. Grava a Venda (com o MESMO ID que foi gerado no C# local)
                 stmts.push(env.DB.prepare(`
                     INSERT INTO tb_vendas (id, id_sessao_caixa, id_cliente, data_hora, subtotal, desconto, total, status)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 `).bind(body.id, body.id_sessao_caixa, body.id_cliente, body.data_hora, body.subtotal, body.desconto, body.total, body.status));
-
-                // 2. Grava os Itens e DÁ BAIXA NO ESTOQUE DA NUVEM
                 for (const item of body.itens) {
                     stmts.push(env.DB.prepare(`
                         INSERT INTO tb_itens_venda (id_venda, id_produto, quantidade, preco_unitario, subtotal)
                         VALUES (?, ?, ?, ?, ?)
                     `).bind(body.id, item.id_produto, item.quantidade, item.preco_unitario, item.subtotal));
-
-                    // Abate a quantidade vendida do estoque atual
                     stmts.push(env.DB.prepare(`
                         UPDATE tb_produtos SET quantidade = quantidade - ? WHERE id = ?
                     `).bind(item.quantidade, item.id_produto));
                 }
-
-                // 3. Grava o Pagamento
                 for (const pag of body.pagamentos) {
                     stmts.push(env.DB.prepare(`
                         INSERT INTO tb_pagamentos (id_venda, metodo, valor)
                         VALUES (?, ?, ?)
                     `).bind(body.id, pag.metodo, pag.valor));
                 }
-
-                // Dispara todas as queries de uma vez só no banco do Cloudflare (Transação segura)
                 await env.DB.batch(stmts);
-
                 return new Response(JSON.stringify({ sucesso: true }), { status: 201, headers: corsHeaders });
             } catch (error) {
                 return new Response(JSON.stringify({ erro: "Erro ao sincronizar venda na nuvem.", detalhe: error.message }), { status: 500, headers: corsHeaders });
@@ -97,6 +86,18 @@ export default {
                 return new Response(JSON.stringify({ sucesso: true }), { status: 200, headers: corsHeaders });
             } catch (error) {
                 return new Response(JSON.stringify({ erro: "Erro ao sincronizar sessões.", detalhe: error.message }), { status: 500, headers: corsHeaders });
+            }
+        }
+        if (path === "/api/app/versao" && method === "GET") {
+            try {
+                const { results } = await env.DB.prepare("SELECT versao, link_download FROM tb_versao ORDER BY id DESC LIMIT 1").all();
+                if (results.length > 0) {
+                    return new Response(JSON.stringify(results[0]), { status: 200, headers: corsHeaders });
+                } else {
+                    return new Response(JSON.stringify({ erro: "Nenhuma versão encontrada" }), { status: 404, headers: corsHeaders });
+                }
+            } catch (error) {
+                return new Response(JSON.stringify({ erro: "Erro ao buscar versão" }), { status: 500, headers: corsHeaders });
             }
         }
 
