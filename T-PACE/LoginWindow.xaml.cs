@@ -12,7 +12,7 @@ namespace T_PACE
     {
         // URL da rota POST do seu Cloudflare Worker que faz a autenticação
         private static readonly string apiLoginUrl = "https://tpace-api.whyguiih.workers.dev/api/web/login";
-        private const string VersaoAtualApp = "0.9.7"; // Controle a versão do seu app compilado aqui!
+        private const string VersaoAtualApp = "0.9.8"; // Controle a versão do seu app compilado aqui!
         public LoginWindow()
         {
             InitializeComponent();

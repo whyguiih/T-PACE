@@ -88,6 +88,19 @@ namespace T_PACE
         }
     }
 
+    // CLASSE DE BLINDAGEM: Evita qualquer erro de 'dynamic' e converte com segurança
+    public class SessaoCaixaDTO
+    {
+        public long id { get; set; }
+        public long id_caixa { get; set; }
+        public long id_usuario { get; set; }
+        public string data_abertura { get; set; }
+        public decimal? valor_fundo_troco { get; set; }
+        public string data_fechamento { get; set; }
+        public long status { get; set; }
+        public decimal? valor_fechamento { get; set; }
+    }
+
     public static class SincronizacaoService
     {
         private static readonly string apiUrl = "https://tpace-api.whyguiih.workers.dev/api/app/produtos";
@@ -221,7 +234,6 @@ namespace T_PACE
                 using (var conn = new SqliteConnection(DatabaseConfig.ConnectionString))
                 {
                     conn.Open();
-                    // Seleciona sessões novas ou recém-fechadas (0 ou nulo)
                     var sessoes = conn.Query("SELECT * FROM tb_sessao_caixa WHERE sincronizado = 0 OR sincronizado IS NULL").ToList();
                     if (sessoes.Count == 0) return;
 
@@ -229,14 +241,18 @@ namespace T_PACE
                     {
                         var listaSessoes = sessoes.Select(s => new
                         {
-                            id = s.id,
-                            id_caixa = s.id_caixa,
-                            id_usuario = s.id_usuario,
+                            // Segura os Casts! Convert.ToInt64 blinda o app contra crashes dinâmicos.
+                            id_caixa = Convert.ToInt64(s.id_caixa),
+                            id_usuario = Convert.ToInt64(s.id_usuario),
                             data_abertura = Convert.ToDateTime(s.data_abertura).ToString("yyyy-MM-dd HH:mm:ss"),
-                            valor_fundo_troco = s.valor_fundo_troco,
-                            data_fechamento = s.data_fechamento != null ? Convert.ToDateTime(s.data_fechamento).ToString("yyyy-MM-dd HH:mm:ss") : null,
-                            status = s.status,
-                            valor_fechamento = s.valor_fechamento
+                            valor_fundo_troco = s.valor_fundo_troco != null ? Convert.ToDecimal(s.valor_fundo_troco) : 0m,
+                            data_fechamento = string.IsNullOrWhiteSpace(s.data_fechamento?.ToString())
+                                              ? null
+                                              : Convert.ToDateTime(s.data_fechamento).ToString("yyyy-MM-dd HH:mm:ss"),
+                            status = Convert.ToInt32(s.status),
+                            valor_fechamento = string.IsNullOrWhiteSpace(s.valor_fechamento?.ToString())
+                                               ? (decimal?)null
+                                               : Convert.ToDecimal(s.valor_fechamento)
                         }).ToList();
 
                         string json = JsonSerializer.Serialize(listaSessoes);
@@ -248,7 +264,7 @@ namespace T_PACE
                         {
                             foreach (var s in sessoes)
                             {
-                                conn.Execute("UPDATE tb_sessao_caixa SET sincronizado = 1 WHERE id = @Id", new { Id = s.id });
+                                conn.Execute("UPDATE tb_sessao_caixa SET sincronizado = 1 WHERE id = @Id", new { Id = Convert.ToInt64(s.id) });
                             }
                         }
                     }

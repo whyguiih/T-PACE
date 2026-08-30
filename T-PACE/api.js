@@ -43,15 +43,16 @@ export default {
             try {
                 const body = await request.json();
                 const stmts = [];
-                stmts.push(env.DB.prepare(`
-                    INSERT INTO tb_vendas (id, id_sessao_caixa, id_cliente, data_hora, subtotal, desconto, total, status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                `).bind(body.id, body.id_sessao_caixa, body.id_cliente, body.data_hora, body.subtotal, body.desconto, body.total, body.status));
+                const resVenda = await env.DB.prepare(`
+                    INSERT INTO tb_vendas (id_sessao_caixa, id_cliente, data_hora, subtotal, desconto, total, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                `).bind(body.id_sessao_caixa, body.id_cliente, body.data_hora, body.subtotal, body.desconto, body.total, body.status).run();
+                const cloudVendaId = resVenda.meta.last_row_id;
                 for (const item of body.itens) {
                     stmts.push(env.DB.prepare(`
                         INSERT INTO tb_itens_venda (id_venda, id_produto, quantidade, preco_unitario, subtotal)
                         VALUES (?, ?, ?, ?, ?)
-                    `).bind(body.id, item.id_produto, item.quantidade, item.preco_unitario, item.subtotal));
+                    `).bind(cloudVendaId, item.id_produto, item.quantidade, item.preco_unitario, item.subtotal));
                     stmts.push(env.DB.prepare(`
                         UPDATE tb_produtos SET quantidade = quantidade - ? WHERE id = ?
                     `).bind(item.quantidade, item.id_produto));
@@ -60,10 +61,10 @@ export default {
                     stmts.push(env.DB.prepare(`
                         INSERT INTO tb_pagamentos (id_venda, metodo, valor)
                         VALUES (?, ?, ?)
-                    `).bind(body.id, pag.metodo, pag.valor));
+                    `).bind(cloudVendaId, pag.metodo, pag.valor));
                 }
                 await env.DB.batch(stmts);
-                return new Response(JSON.stringify({ sucesso: true }), { status: 201, headers: corsHeaders });
+                return new Response(JSON.stringify({ sucesso: true, id_gerado: cloudVendaId }), { status: 201, headers: corsHeaders });
             } catch (error) {
                 return new Response(JSON.stringify({ erro: "Erro ao sincronizar venda na nuvem.", detalhe: error.message }), { status: 500, headers: corsHeaders });
             }
@@ -74,13 +75,17 @@ export default {
                 const stmts = [];
                 for (const s of body) {
                     stmts.push(env.DB.prepare(`
-                        INSERT INTO tb_sessao_caixa (id, id_caixa, id_usuario, data_abertura, valor_fundo_troco, data_fechamento, status, valor_fechamento)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT(id) DO UPDATE SET 
-                            data_fechamento = excluded.data_fechamento, 
-                            status = excluded.status, 
-                            valor_fechamento = excluded.valor_fechamento
-                    `).bind(s.id, s.id_caixa, s.id_usuario, s.data_abertura, s.valor_fundo_troco, s.data_fechamento, s.status, s.valor_fechamento));
+                        INSERT INTO tb_sessao_caixa (id_caixa, id_usuario, data_abertura, valor_fundo_troco, data_fechamento, status, valor_fechamento)
+                        SELECT ?, ?, ?, ?, ?, ?, ?
+                        WHERE NOT EXISTS (
+                            SELECT 1 FROM tb_sessao_caixa WHERE data_abertura = ?
+                        )
+                    `).bind(s.id_caixa, s.id_usuario, s.data_abertura, s.valor_fundo_troco, s.data_fechamento, s.status, s.valor_fechamento, s.data_abertura));
+                    stmts.push(env.DB.prepare(`
+                        UPDATE tb_sessao_caixa 
+                        SET data_fechamento = ?, status = ?, valor_fechamento = ?
+                        WHERE data_abertura = ?
+                    `).bind(s.data_fechamento, s.status, s.valor_fechamento, s.data_abertura));
                 }
                 await env.DB.batch(stmts);
                 return new Response(JSON.stringify({ sucesso: true }), { status: 200, headers: corsHeaders });
