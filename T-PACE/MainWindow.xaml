@@ -206,7 +206,8 @@
                         </Grid.RowDefinitions>
                         <Grid Grid.Row="0" Margin="0,0,0,25">
                             <Rectangle Fill="#33D6C4E8" Stroke="#66D6C4E8" StrokeThickness="2" StrokeDashArray="4 4" RadiusX="8" RadiusY="8"/>
-                            <TextBlock Text="FOTO DO PRODUTO" Foreground="#885E3A7D" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="txtFotoPlaceholder" Text="FOTO DO PRODUTO" Foreground="#885E3A7D" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Image x:Name="imgProdutoFoto" Stretch="Uniform" Margin="10" Visibility="Collapsed" RenderOptions.BitmapScalingMode="HighQuality"/>
                         </Grid>
                         <Viewbox Grid.Row="1" Stretch="Uniform" HorizontalAlignment="Left" MaxHeight="100">
                             <StackPanel>

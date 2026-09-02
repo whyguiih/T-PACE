@@ -73,6 +73,10 @@ namespace T_PACE
 
                 // NOVO: Adiciona a coluna para gerenciar a fila da sessão do caixa
                 try { connection.Execute("ALTER TABLE tb_sessao_caixa ADD COLUMN sincronizado BOOLEAN DEFAULT 0;"); } catch { }
+
+                // NOVAS COLUNAS DE PRODUTO
+                try { connection.Execute("ALTER TABLE tb_produtos ADD COLUMN foto TEXT;"); } catch { }
+                try { connection.Execute("ALTER TABLE tb_produtos ADD COLUMN codigo_geral INTEGER;"); } catch { }
             }
         }
     }

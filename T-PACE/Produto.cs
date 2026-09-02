@@ -18,5 +18,7 @@
         public string validade { get; set; } = string.Empty;
         public int id_filial { get; set; }
         public decimal quantidade_minima { get; set; }
+        public string foto { get; set; } = string.Empty;
+        public long? codigo_geral { get; set; }
     }
 }

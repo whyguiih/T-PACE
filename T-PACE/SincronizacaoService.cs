@@ -122,15 +122,15 @@ namespace T_PACE
 
                     if (produtosCloudflare != null && produtosCloudflare.Count > 0)
                     {
+                        // 1. PRIMEIRO LOOP: Salva tudo no banco de dados local
                         using (var connection = new SqliteConnection(DatabaseConfig.ConnectionString))
                         {
                             connection.Open();
-
                             foreach (var p in produtosCloudflare)
                             {
                                 string sql = @"
-                                    INSERT INTO tb_produtos (id, codigo_barras, nome, custo, preco_venda, ncm, cest, aliquotas_imposto, quantidade, valor_promocional, unidade_venda, em_promocao, lote, validade, id_filial, quantidade_minima) 
-                                    VALUES (@id, @codigo_barras, @nome, @custo, @preco_venda, @ncm, @cest, @aliquotas_imposto, @quantidade, @valor_promocional, @unidade_venda, @em_promocao, @lote, @validade, @id_filial, @quantidade_minima)
+                                    INSERT INTO tb_produtos (id, codigo_barras, nome, custo, preco_venda, ncm, cest, aliquotas_imposto, quantidade, valor_promocional, unidade_venda, em_promocao, lote, validade, id_filial, quantidade_minima, foto, codigo_geral)
+                                     VALUES (@id, @codigo_barras, @nome, @custo, @preco_venda, @ncm, @cest, @aliquotas_imposto, @quantidade, @valor_promocional, @unidade_venda, @em_promocao, @lote, @validade, @id_filial, @quantidade_minima, @foto, @codigo_geral)
                                     ON CONFLICT(id) DO UPDATE SET 
                                         codigo_barras = excluded.codigo_barras,
                                         nome = excluded.nome,
@@ -146,10 +146,46 @@ namespace T_PACE
                                         lote = excluded.lote,
                                         validade = excluded.validade,
                                         id_filial = excluded.id_filial,
-                                        quantidade_minima = excluded.quantidade_minima;
+                                        quantidade_minima = excluded.quantidade_minima,
+                                        foto = excluded.foto,
+                                        codigo_geral = excluded.codigo_geral;
                                 ";
-
                                 connection.Execute(sql, p);
+                            }
+                        }
+
+                        // 2. SEGUNDO LOOP: Baixa as fotos para o Cache Local
+                        string pastaImagens = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Imagens");
+                        if (!System.IO.Directory.Exists(pastaImagens))
+                        {
+                            System.IO.Directory.CreateDirectory(pastaImagens);
+                        }
+
+                        // Mudamos a variável para 'prod' para não colidir com o 'p' de cima
+                        foreach (var prod in produtosCloudflare)
+                        {
+                            if (!string.IsNullOrWhiteSpace(prod.foto))
+                            {
+                                try
+                                {
+                                    // Limpa URLs antigas que ficaram zumbis no banco com "pub-https://"
+                                    string urlLimpa = prod.foto.Replace("pub-https://", "pub-");
+
+                                    // Pega só o nome final do arquivo (ex: foto.jpg)
+                                    string nomeArquivo = urlLimpa.Substring(urlLimpa.LastIndexOf('/') + 1);
+                                    string caminhoLocal = System.IO.Path.Combine(pastaImagens, nomeArquivo);
+
+                                    // Só baixa se a imagem ainda não existir na pasta do computador!
+                                    if (!System.IO.File.Exists(caminhoLocal))
+                                    {
+                                        var imageBytes = await client.GetByteArrayAsync(urlLimpa);
+                                        await System.IO.File.WriteAllBytesAsync(caminhoLocal, imageBytes);
+                                    }
+                                }
+                                catch
+                                {
+                                    // Se uma foto falhar, ignora e continua baixando as outras
+                                }
                             }
                         }
                     }

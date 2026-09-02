@@ -159,6 +159,49 @@ namespace T_PACE
 
                     AtualizarTotais();
                     txtBusca.Clear();
+                    txtBusca.Clear();
+
+                    // --- CARREGAMENTO DA FOTO DO CACHE LOCAL INSTANTÂNEO ---
+                    if (!string.IsNullOrEmpty(produto.foto))
+                    {
+                        string nomeArquivo = produto.foto.Substring(produto.foto.LastIndexOf('/') + 1);
+                        string caminhoLocal = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Imagens", nomeArquivo);
+
+                        if (System.IO.File.Exists(caminhoLocal))
+                        {
+                            try
+                            {
+                                var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+                                bitmap.BeginInit();
+                                bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                                bitmap.UriSource = new Uri(caminhoLocal, UriKind.Absolute);
+                                bitmap.EndInit();
+                                bitmap.Freeze(); // Garante estabilidade na interface gráfica
+
+                                imgProdutoFoto.Source = bitmap;
+                                imgProdutoFoto.Visibility = Visibility.Visible;
+                                txtFotoPlaceholder.Visibility = Visibility.Collapsed;
+                            }
+                            catch
+                            {
+                                imgProdutoFoto.Visibility = Visibility.Collapsed;
+                                txtFotoPlaceholder.Text = "ERRO NA FOTO";
+                                txtFotoPlaceholder.Visibility = Visibility.Visible;
+                            }
+                        }
+                        else
+                        {
+                            imgProdutoFoto.Visibility = Visibility.Collapsed;
+                            txtFotoPlaceholder.Text = "FOTO NÃO BAIXADA";
+                            txtFotoPlaceholder.Visibility = Visibility.Visible;
+                        }
+                    }
+                    else
+                    {
+                        imgProdutoFoto.Visibility = Visibility.Collapsed;
+                        txtFotoPlaceholder.Text = "SEM FOTO";
+                        txtFotoPlaceholder.Visibility = Visibility.Visible;
+                    }
                 }
                 else
                 {
@@ -584,13 +627,16 @@ namespace T_PACE
                                 Total = totalAPagar
                             }, transaction);
 
-                            // 2. Grava os Itens e DÁ BAIXA NO ESTOQUE (quantidade - @Quantidade)
+                            // 2. Grava os Itens e DÁ BAIXA NO ESTOQUE EM TODOS OS CÓDIGOS DE BARRAS IGUAIS
                             foreach (var item in Carrinho)
                             {
                                 var sqlItem = @"INSERT INTO tb_itens_venda (id_venda, id_produto, quantidade, preco_unitario, subtotal)
                                                 VALUES (@IdVenda, @IdProduto, @Quantidade, @PrecoUnitario, @Subtotal);
                                                 
-                                                UPDATE tb_produtos SET quantidade = quantidade - @Quantidade WHERE id = @IdProduto;";
+                                                UPDATE tb_produtos 
+                                                SET quantidade = quantidade - @Quantidade 
+                                                WHERE (codigo_geral IS NOT NULL AND codigo_geral = (SELECT codigo_geral FROM tb_produtos WHERE id = @IdProduto))
+                                                   OR (codigo_geral IS NULL AND id = @IdProduto);";
 
                                 connection.Execute(sqlItem, new
                                 {
@@ -639,6 +685,8 @@ namespace T_PACE
                 txtUltimoNome.Text = "Caixa Livre";
                 txtUltimoDetalhes.Text = " ";
                 txtUltimoPreco.Text = "R$ 0,00";
+                imgProdutoFoto.Visibility = Visibility.Collapsed;
+                txtFotoPlaceholder.Visibility = Visibility.Visible;
                 AtualizarTotais();
                 FecharTelaPagamento();
             }
