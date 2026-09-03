@@ -599,11 +599,12 @@ namespace T_PACE
 
             // CALCULA O TROCO PARA SAIR NA NOTINHA
             decimal trocoFinal = valorRecebido - totalAPagar;
+            // Se por acaso vir nulo, assume "dinheiro" como padrão
             string metodoSelecionado = ((System.Windows.Controls.ComboBoxItem)cmbMetodoPagamento.SelectedItem)?.Content?.ToString() ?? "dinheiro";
 
-            // GERA UM MINI-HASH NUMÉRICO BASEADO NO TEMPO (MUITO MAIS CURTO E 100% ÚNICO)
-            // Calcula os milissegundos desde 01/08/2026. Gera um código de ~10 dígitos.
-            string codigoUnicoCupom = (4).ToString();
+            // GERA CÓDIGO PAR DE 12 DÍGITOS (AnoMesDiaHoraMinutoSegundo)
+            // Fica estreito na bobina, não precisa de zero extra (pois é par) e não se repete.
+            string codigoUnicoCupom = DateTime.Now.ToString("yyMMddHHmmssff");
 
             try
             {
@@ -891,7 +892,7 @@ namespace T_PACE
                 try
                 {
                     // Gera o código de barras com a string recebida do momento exato da venda
-                    var imgBarcode = GerarCodigoBarrasCode39(codigoUnicoCupom);
+                    var imgBarcode = GerarCodigoBarrasITF(codigoUnicoCupom);
                     doc.Blocks.Add(new System.Windows.Documents.BlockUIContainer(imgBarcode));
 
                     var pRodape = new System.Windows.Documents.Paragraph();
@@ -925,26 +926,24 @@ namespace T_PACE
         // ==========================================
         // GERADOR NATIVO DE CÓDIGO DE BARRAS (CODE 39)
         // ==========================================
-        private System.Windows.Controls.Image GerarCodigoBarrasCode39(string texto)
+        // NOVO GERADOR DE BARRAS: Interleaved 2 of 5 (Metade da largura, linhas nítidas e fortes)
+        private System.Windows.Controls.Image GerarCodigoBarrasITF(string texto)
         {
-            string[] padroes = new string[] {
-                "bwbWBwBwb", "BwbWbwbwB", "bwBWbwbwB", "BwBWbwbwb", "bwbWBwbwB",
-                "BwbWBwbwb", "bwBWBwbwb", "bwbWbwBwB", "BwbWbwBwb", "bwBWbwBwb"
-            };
-            string asterisco = "bWbwBwBwb"; // Caractere Start/Stop (Obrigatório em todo leitor)
+            // O padrão ITF exige um número par de dígitos. Se for ímpar, adicionamos um zero.
+            if (texto.Length % 2 != 0) texto = "0" + texto;
 
-            string dados = $"*{texto}*";
-            int barraMagra = 2; // Linhas mais finas para o código caber na bobina
-            int barraLarga = 5; // Mantém a proporção exata de leitura do Code39
-            int altura = 70;    // Deixa o código mais alto para o leitor a laser bipar com facilidade
+            string[] padroes = { "NNWWN", "WNNNW", "NWNNW", "WWNNN", "NNWNW", "WNWNN", "NWWNN", "NNNWW", "WNNWN", "NWNWN" };
 
-            int larguraTotal = 0;
-            foreach (char c in dados)
+            int barraMagra = 2; // Grosso o suficiente para a cabeça térmica não borrar
+            int barraLarga = 5;
+            int altura = 70;
+
+            // Calcula a largura total da imagem com antecedência
+            int larguraTotal = (barraMagra * 4) + (barraLarga + barraMagra * 2);
+            foreach (char c in texto)
             {
-                string padrao = c == '*' ? asterisco : padroes[c - '0'];
-                foreach (char p in padrao)
-                    larguraTotal += (p == 'B' || p == 'W') ? barraLarga : barraMagra;
-                larguraTotal += barraMagra; // Espaço em branco separador
+                string p = padroes[c - '0'];
+                foreach (char peso in p) larguraTotal += peso == 'W' ? barraLarga : barraMagra;
             }
 
             var visual = new System.Windows.Media.DrawingVisual();
@@ -952,21 +951,33 @@ namespace T_PACE
             {
                 // Pinta o fundo de branco
                 context.DrawRectangle(System.Windows.Media.Brushes.White, null, new Rect(0, 0, larguraTotal, altura));
+
                 int x = 0;
 
-                // Desenha a sequência de barras
-                foreach (char c in dados)
+                // Padrão de Início (Start: 4 linhas finas intercaladas)
+                context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, barraMagra, altura)); x += barraMagra * 2;
+                context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, barraMagra, altura)); x += barraMagra * 2;
+
+                // A mágica: desenha os pares de números (um na barra preta, um no espaço em branco)
+                for (int i = 0; i < texto.Length; i += 2)
                 {
-                    string padrao = c == '*' ? asterisco : padroes[c - '0'];
-                    foreach (char p in padrao)
+                    string p1 = padroes[texto[i] - '0'];     // Número 1 vira as barras pretas
+                    string p2 = padroes[texto[i + 1] - '0']; // Número 2 vira os espaços brancos
+
+                    for (int j = 0; j < 5; j++)
                     {
-                        int w = (p == 'B' || p == 'W') ? barraLarga : barraMagra;
-                        if (p == 'B' || p == 'b')
-                            context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, w, altura));
-                        x += w;
+                        int wBar = p1[j] == 'W' ? barraLarga : barraMagra;
+                        context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, wBar, altura));
+                        x += wBar;
+
+                        int wSpc = p2[j] == 'W' ? barraLarga : barraMagra;
+                        x += wSpc;
                     }
-                    x += barraMagra;
                 }
+
+                // Padrão de Fim (Stop: Larga preta, Fina branca, Fina preta)
+                context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, barraLarga, altura)); x += barraLarga + barraMagra;
+                context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, barraMagra, altura)); x += barraMagra;
             }
 
             var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(larguraTotal, altura, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
@@ -980,8 +991,6 @@ namespace T_PACE
                 Margin = new Thickness(0, 15, 0, 5),
                 HorizontalAlignment = HorizontalAlignment.Center
             };
-
-            // Renderização especial para manter o contraste das barras térmicas
             System.Windows.Media.RenderOptions.SetBitmapScalingMode(img, System.Windows.Media.BitmapScalingMode.NearestNeighbor);
             return img;
         }
