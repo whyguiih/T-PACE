@@ -559,7 +559,12 @@ namespace T_PACE
             }
 
             decimal trocoFinal = valorRecebido - totalAPagar;
+            // Se por acaso vir nulo, assume "dinheiro" como padrão
             string metodoSelecionado = ((System.Windows.Controls.ComboBoxItem)cmbMetodoPagamento.SelectedItem)?.Content?.ToString() ?? "dinheiro";
+
+            // GERA CÓDIGO PAR DE 12 DÍGITOS (AnoMesDiaHoraMinutoSegundo)
+            // Fica estreito na bobina, não precisa de zero extra (pois é par) e não se repete.
+            string codigoUnicoCupom = DateTime.Now.ToString("yyMMddHHmmssff");
 
             try
             {
@@ -569,8 +574,8 @@ namespace T_PACE
                     using (var transaction = connection.BeginTransaction())
                     {
                         try
-                        {
                             var sqlVenda = @"INSERT INTO tb_vendas (id_sessao_caixa, id_cliente, data_hora, subtotal, desconto, total, status) 
+                                             VALUES (@Sessao, NULL, @DataHora, @Subtotal, @Desconto, @Total, 'pago');
                                              VALUES (@Sessao, NULL, @DataHora, @Subtotal, @Desconto, @Total, 'pago');
                                              SELECT last_insert_rowid();";
 
@@ -580,7 +585,8 @@ namespace T_PACE
                                 DataHora = DateTime.Now,
                                 Subtotal = subtotalBruto,
                                 Desconto = descontoTotal,
-                                Total = totalAPagar
+                                Total = totalAPagar,
+                                IdCupom = codigoUnicoCupom // SALVANDO NO BANCO LOCAL
                             }, transaction);
 
                             foreach (var item in Carrinho)
@@ -614,7 +620,7 @@ namespace T_PACE
                             }, transaction);
 
                             transaction.Commit();
-
+                            ImprimirRecibo(idVenda, Carrinho.ToList(), subtotalBruto, descontoTotal, totalAPagar, metodoSelecionado, valorRecebido, trocoFinal);
                             ImprimirRecibo(idVenda, Carrinho.ToList(), subtotalBruto, descontoTotal, totalAPagar, metodoSelecionado, valorRecebido, trocoFinal);
 
                             Task.Run(async () => await SincronizacaoService.SincronizarVendasPendentesAsync());
@@ -722,7 +728,6 @@ namespace T_PACE
 
         // ==========================================
         // LÓGICA DE TROCA E DEVOLUÇÃO
-        // ==========================================
 
         private void AbrirTelaTroca()
         {
@@ -934,6 +939,7 @@ namespace T_PACE
         }
 
         private void ImprimirRecibo(long idVenda, System.Collections.Generic.List<ItemCupom> itens, decimal subtotal, decimal desconto, decimal total, string metodoPagamento, decimal valorRecebido, decimal troco)
+        private void ImprimirRecibo(long idVenda, System.Collections.Generic.List<ItemCupom> itens, decimal subtotal, decimal desconto, decimal total, string metodoPagamento, decimal valorRecebido, decimal troco)
         {
             try
             {
@@ -1021,13 +1027,14 @@ namespace T_PACE
 
                 try
                 {
-                    var imgBarcode = GerarCodigoBarrasCode39(idVenda.ToString("D6"));
+                    // Gera o código de barras com a string recebida do momento exato da venda
+                    var imgBarcode = GerarCodigoBarrasITF(codigoUnicoCupom);
                     doc.Blocks.Add(new System.Windows.Documents.BlockUIContainer(imgBarcode));
 
                     var pRodape = new System.Windows.Documents.Paragraph();
                     pRodape.Margin = new Thickness(0, 0, 0, 10);
-                    pRodape.TextAlignment = TextAlignment.Center;
                     pRodape.Inlines.Add(new System.Windows.Documents.Run(idVenda.ToString("D6") + "\n") { FontSize = 12, FontWeight = FontWeights.Black });
+
                     pRodape.Inlines.Add(new System.Windows.Documents.Run($"\nData: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n") { FontSize = 11 });
                     pRodape.Inlines.Add(new System.Windows.Documents.Run("OBRIGADO PELA PREFERENCIA!") { FontWeight = FontWeights.Black, FontSize = 11 });
                     doc.Blocks.Add(pRodape);
@@ -1049,48 +1056,63 @@ namespace T_PACE
 
             return esquerda + direita.PadLeft(totalColunas - esquerda.Length);
         }
-
+        // ==========================================
+        // GERADOR NATIVO DE CÓDIGO DE BARRAS (CODE 39)
+        // ==========================================
+        // NOVO GERADOR DE BARRAS: Interleaved 2 of 5 (Metade da largura, linhas nítidas e fortes)
+        private System.Windows.Controls.Image GerarCodigoBarrasITF(string texto)
         private System.Windows.Controls.Image GerarCodigoBarrasCode39(string texto)
-        {
-            string[] padroes = new string[] {
-                "bwbWBwBwb", "BwbWbwbwB", "bwBWbwbwB", "BwBWbwbwb", "bwbWBwbwB",
-                "BwbWBwbwb", "bwBWBwbwb", "bwbWbwBwB", "BwbWbwBwb", "bwBWbwBwb"
-            };
-
-            string asterisco = "bWbwBwBwb";
-            string dados = $"*{texto}*";
-
-            int barraMagra = 2;
-            int barraLarga = 6;
-            int altura = 45;
+            // O padrão ITF exige um número par de dígitos. Se for ímpar, adicionamos um zero.
+            if (texto.Length % 2 != 0) texto = "0" + texto;
+            string asterisco = "bWbwBwBwb"; // Caractere Start/Stop (Obrigatório em todo leitor)
+            string[] padroes = { "NNWWN", "WNNNW", "NWNNW", "WWNNN", "NNWNW", "WNWNN", "NWWNN", "NNNWW", "WNNWN", "NWNWN" };
             int larguraTotal = 0;
+            int barraMagra = 2; // Grosso o suficiente para a cabeça térmica não borrar
+            int barraLarga = 5;
+            int altura = 70;
 
+            // Calcula a largura total da imagem com antecedência
+            int larguraTotal = (barraMagra * 4) + (barraLarga + barraMagra * 2);
+            foreach (char c in texto)
             foreach (char c in dados)
-            {
-                string padrao = c == '*' ? asterisco : padroes[c - '0'];
-                foreach (char p in padrao)
-                    larguraTotal += (p == 'B' || p == 'W') ? barraLarga : barraMagra;
+                string p = padroes[c - '0'];
+                foreach (char peso in p) larguraTotal += peso == 'W' ? barraLarga : barraMagra;
                 larguraTotal += barraMagra;
+                    larguraTotal += (p == 'B' || p == 'W') ? barraLarga : barraMagra;
+                larguraTotal += barraMagra; // Espaço em branco separador
             }
 
             var visual = new System.Windows.Media.DrawingVisual();
             using (var context = visual.RenderOpen())
             {
                 context.DrawRectangle(System.Windows.Media.Brushes.White, null, new Rect(0, 0, larguraTotal, altura));
-                int x = 0;
+                // Padrão de Início (Start: 4 linhas finas intercaladas)
+                context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, barraMagra, altura)); x += barraMagra * 2;
+                context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, barraMagra, altura)); x += barraMagra * 2;
 
+                // A mágica: desenha os pares de números (um na barra preta, um no espaço em branco)
+                for (int i = 0; i < texto.Length; i += 2)
+                foreach (char c in dados)
+                // Desenha a sequência de barras
                 foreach (char c in dados)
                 {
-                    string padrao = c == '*' ? asterisco : padroes[c - '0'];
-                    foreach (char p in padrao)
+                    string p1 = padroes[texto[i] - '0'];     // Número 1 vira as barras pretas
+                    string p2 = padroes[texto[i + 1] - '0']; // Número 2 vira os espaços brancos
+
+                    for (int j = 0; j < 5; j++)
                     {
-                        int w = (p == 'B' || p == 'W') ? barraLarga : barraMagra;
-                        if (p == 'B' || p == 'b')
-                            context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, w, altura));
-                        x += w;
+                        int wBar = p1[j] == 'W' ? barraLarga : barraMagra;
+                        context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, wBar, altura));
+                        x += wBar;
+
+                        int wSpc = p2[j] == 'W' ? barraLarga : barraMagra;
+                        x += wSpc;
                     }
-                    x += barraMagra;
                 }
+
+                // Padrão de Fim (Stop: Larga preta, Fina branca, Fina preta)
+                context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, barraLarga, altura)); x += barraLarga + barraMagra;
+                context.DrawRectangle(System.Windows.Media.Brushes.Black, null, new Rect(x, 0, barraMagra, altura)); x += barraMagra;
             }
 
             var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(larguraTotal, altura, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
@@ -1102,9 +1124,10 @@ namespace T_PACE
                 Width = larguraTotal,
                 Height = altura,
                 Margin = new Thickness(0, 15, 0, 5),
-                HorizontalAlignment = HorizontalAlignment.Center
+
             };
 
+            // Renderização especial para manter o contraste das barras térmicas
             System.Windows.Media.RenderOptions.SetBitmapScalingMode(img, System.Windows.Media.BitmapScalingMode.NearestNeighbor);
             return img;
         }

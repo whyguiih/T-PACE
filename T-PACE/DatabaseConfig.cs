@@ -77,6 +77,9 @@ namespace T_PACE
                 // NOVAS COLUNAS DE PRODUTO
                 try { connection.Execute("ALTER TABLE tb_produtos ADD COLUMN foto TEXT;"); } catch { }
                 try { connection.Execute("ALTER TABLE tb_produtos ADD COLUMN codigo_geral INTEGER;"); } catch { }
+
+                // NOVO: Adiciona a coluna do Cupom Único na tabela de Vendas
+                try { connection.Execute("ALTER TABLE tb_vendas ADD COLUMN id_cupom VARCHAR(25);"); } catch { }
             }
         }
     }
