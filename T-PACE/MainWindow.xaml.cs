@@ -981,6 +981,15 @@ namespace T_PACE
             return img;
         }
 
+        // ==========================================
+        // EVENTOS DE CLIQUE DO RODAPÉ
+        // ==========================================
+        private void Rodape_F2_Click(object sender, MouseButtonEventArgs e) => AbrirTelaPagamento();
+        private void Rodape_F3_Click(object sender, MouseButtonEventArgs e) => AbrirTelaCancelamento();
+        private void Rodape_F4_Click(object sender, MouseButtonEventArgs e) => AbrirTelaBusca();
+        private void Rodape_F5_Click(object sender, MouseButtonEventArgs e) => AbrirTelaDesconto();
+        private void Rodape_F9_Click(object sender, MouseButtonEventArgs e) => AbrirTelaFechamento();
+
         public class ItemCupom : INotifyPropertyChanged
         {
             public int IdProduto { get; set; } // <--- ADICIONE ESTA LINHA AQUI

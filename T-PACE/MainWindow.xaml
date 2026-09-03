@@ -253,11 +253,11 @@
         <!-- RODAPÉ -->
         <Border Grid.Row="2" Background="#44F8F3FC" BorderBrush="#44D6C4E8" BorderThickness="0,1.5,0,0" Padding="10">
             <WrapPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="[ F2 ] Receber Venda" Foreground="#F8F3FC" FontSize="14" FontWeight="Bold" Margin="15,5"/>
-                <TextBlock Text="[ F3 ] Cancelar Item" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5"/>
-                <TextBlock Text="[ F4 ] Buscar Produto" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5"/>
-                <TextBlock Text="[ F5 ] Aplicar Desconto" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5"/>
-                <TextBlock Text="[ F9 ] Sair do Caixa" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5"/>
+                <TextBlock Text="[ F2 ] Receber Venda" Foreground="#F8F3FC" FontSize="14" FontWeight="Bold" Margin="15,5" Cursor="Hand" MouseLeftButtonUp="Rodape_F2_Click"/>
+                <TextBlock Text="[ F3 ] Cancelar Item" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5" Cursor="Hand" MouseLeftButtonUp="Rodape_F3_Click"/>
+                <TextBlock Text="[ F4 ] Buscar Produto" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5" Cursor="Hand" MouseLeftButtonUp="Rodape_F4_Click"/>
+                <TextBlock Text="[ F5 ] Aplicar Desconto" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5" Cursor="Hand" MouseLeftButtonUp="Rodape_F5_Click"/>
+                <TextBlock Text="[ F9 ] Sair do Caixa" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5" Cursor="Hand" MouseLeftButtonUp="Rodape_F9_Click"/>
             </WrapPanel>
         </Border>
 
