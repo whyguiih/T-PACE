@@ -233,13 +233,14 @@ namespace T_PACE
                             var objVendaNuvem = new
                             {
                                 id = venda.id,
-                                id_sessao_caixa = (long?)venda.id_sessao_caixa, // <-- CAST DE SEGURANÇA ADICIONADO
+                                id_sessao_caixa = (long?)venda.id_sessao_caixa,
                                 id_cliente = (long?)venda.id_cliente,
                                 data_hora = Convert.ToDateTime(venda.data_hora).ToString("yyyy-MM-dd HH:mm:ss"),
                                 subtotal = venda.subtotal,
                                 desconto = venda.desconto,
                                 total = venda.total,
                                 status = venda.status,
+                                id_cupom = venda.id_cupom, // ENVIANDO O CÓDIGO TEMPORAL PARA O CLOUDFLARE
                                 pagamentos = pagamentos,
                                 itens = itens
                             };

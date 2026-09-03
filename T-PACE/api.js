@@ -46,9 +46,18 @@ export default {
                 const body = await request.json();
                 const stmts = [];
                 const resVenda = await env.DB.prepare(`
-                INSERT INTO tb_vendas (id_sessao_caixa, id_cliente, data_hora, subtotal, desconto, total, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `).bind(body.id_sessao_caixa, body.id_cliente, body.data_hora, body.subtotal, body.desconto, body.total, body.status).run();
+                    INSERT INTO tb_vendas (id_sessao_caixa, id_cliente, data_hora, subtotal, desconto, total, status, id_cupom)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                `).bind(
+                    body.id_sessao_caixa,
+                    body.id_cliente,
+                    body.data_hora,
+                    body.subtotal,
+                    body.desconto,
+                    body.total,
+                    body.status,
+                    body.id_cupom
+                ).run();
                 const cloudVendaId = resVenda.meta.last_row_id;
                 for (const item of body.itens) {
                     stmts.push(env.DB.prepare(`

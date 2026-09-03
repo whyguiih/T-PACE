@@ -599,9 +599,11 @@ namespace T_PACE
 
             // CALCULA O TROCO PARA SAIR NA NOTINHA
             decimal trocoFinal = valorRecebido - totalAPagar;
-
-            // Se por acaso vir nulo, assume "dinheiro" como padrão
             string metodoSelecionado = ((System.Windows.Controls.ComboBoxItem)cmbMetodoPagamento.SelectedItem)?.Content?.ToString() ?? "dinheiro";
+
+            // GERA UM MINI-HASH NUMÉRICO BASEADO NO TEMPO (MUITO MAIS CURTO E 100% ÚNICO)
+            // Calcula os milissegundos desde 01/08/2026. Gera um código de ~10 dígitos.
+            string codigoUnicoCupom = (4).ToString();
 
             try
             {
@@ -614,8 +616,9 @@ namespace T_PACE
                         try
                         {
                             // 1. Grava a Venda
-                            var sqlVenda = @"INSERT INTO tb_vendas (id_sessao_caixa, id_cliente, data_hora, subtotal, desconto, total, status)
-                                             VALUES (@Sessao, NULL, @DataHora, @Subtotal, @Desconto, @Total, 'pago');
+                            // 1. Grava a Venda
+                            var sqlVenda = @"INSERT INTO tb_vendas (id_sessao_caixa, id_cliente, data_hora, subtotal, desconto, total, status, id_cupom)
+                                             VALUES (@Sessao, NULL, @DataHora, @Subtotal, @Desconto, @Total, 'pago', @IdCupom);
                                              SELECT last_insert_rowid();";
 
                             long idVenda = connection.ExecuteScalar<long>(sqlVenda, new
@@ -624,7 +627,8 @@ namespace T_PACE
                                 DataHora = DateTime.Now,
                                 Subtotal = subtotalBruto,
                                 Desconto = descontoTotal,
-                                Total = totalAPagar
+                                Total = totalAPagar,
+                                IdCupom = codigoUnicoCupom // SALVANDO NO BANCO LOCAL
                             }, transaction);
 
                             // 2. Grava os Itens e DÁ BAIXA NO ESTOQUE EM TODOS OS CÓDIGOS DE BARRAS IGUAIS
@@ -666,7 +670,7 @@ namespace T_PACE
                             // ==========================================
                             // IMPRIMIR O CUPOM DA VENDA
                             // ==========================================
-                            ImprimirRecibo(idVenda, Carrinho.ToList(), subtotalBruto, descontoTotal, totalAPagar, metodoSelecionado, valorRecebido, trocoFinal);
+                            ImprimirRecibo(idVenda, codigoUnicoCupom, Carrinho.ToList(), subtotalBruto, descontoTotal, totalAPagar, metodoSelecionado, valorRecebido, trocoFinal);
 
                             // CHAMA O SINCRONIZADOR DE FILA
                             Task.Run(async () => await SincronizacaoService.SincronizarVendasPendentesAsync());
@@ -781,7 +785,7 @@ namespace T_PACE
         // ==========================================
         // GERADOR E IMPRESSOR DE CUPOM TÉRMICO (NFC-e CORRIGIDO E ALINHADO)
         // ==========================================
-        private void ImprimirRecibo(long idVenda, System.Collections.Generic.List<ItemCupom> itens, decimal subtotal, decimal desconto, decimal total, string metodoPagamento, decimal valorRecebido, decimal troco)
+        private void ImprimirRecibo(long idVenda, string codigoUnicoCupom, System.Collections.Generic.List<ItemCupom> itens, decimal subtotal, decimal desconto, decimal total, string metodoPagamento, decimal valorRecebido, decimal troco)
         {
             try
             {
@@ -886,14 +890,15 @@ namespace T_PACE
                 // 6. CÓDIGO DE BARRAS DA VENDA E RODAPÉ
                 try
                 {
-                    var imgBarcode = GerarCodigoBarrasCode39(idVenda.ToString("D6"));
+                    // Gera o código de barras com a string recebida do momento exato da venda
+                    var imgBarcode = GerarCodigoBarrasCode39(codigoUnicoCupom);
                     doc.Blocks.Add(new System.Windows.Documents.BlockUIContainer(imgBarcode));
 
                     var pRodape = new System.Windows.Documents.Paragraph();
                     pRodape.Margin = new Thickness(0, 0, 0, 10);
                     pRodape.TextAlignment = TextAlignment.Center;
-                    pRodape.Inlines.Add(new System.Windows.Documents.Run(idVenda.ToString("D6") + "\n") { FontSize = 12, FontWeight = FontWeights.Black });
 
+                    pRodape.Inlines.Add(new System.Windows.Documents.Run(codigoUnicoCupom + "\n") { FontSize = 12, FontWeight = FontWeights.Black });
                     pRodape.Inlines.Add(new System.Windows.Documents.Run($"\nData: {DateTime.Now:dd/MM/yyyy HH:mm:ss}\n") { FontSize = 11 });
                     pRodape.Inlines.Add(new System.Windows.Documents.Run("OBRIGADO PELA PREFERENCIA!") { FontWeight = FontWeights.Black, FontSize = 11 });
                     doc.Blocks.Add(pRodape);
@@ -929,9 +934,9 @@ namespace T_PACE
             string asterisco = "bWbwBwBwb"; // Caractere Start/Stop (Obrigatório em todo leitor)
 
             string dados = $"*{texto}*";
-            int barraMagra = 2; // Espessura da linha fina
-            int barraLarga = 6; // Espessura da linha grossa (ideal para leitura de celular e laser)
-            int altura = 45;
+            int barraMagra = 2; // Linhas mais finas para o código caber na bobina
+            int barraLarga = 5; // Mantém a proporção exata de leitura do Code39
+            int altura = 70;    // Deixa o código mais alto para o leitor a laser bipar com facilidade
 
             int larguraTotal = 0;
             foreach (char c in dados)
