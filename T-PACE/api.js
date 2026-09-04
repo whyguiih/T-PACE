@@ -265,6 +265,7 @@ export default {
                 const queryDetalhes = `
             SELECT
                 v.id as id_venda,
+                v.id_cupom,
                 v.data_hora,
                 v.subtotal as venda_subtotal,
                 v.total as venda_total,
