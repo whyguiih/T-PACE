@@ -997,7 +997,7 @@ namespace T_PACE
                 pCabecalho.LineHeight = 16;
                 pCabecalho.Margin = new Thickness(0, 0, 0, 10);
 
-                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("CNPJ: 00.000.000/0000-00\nCNPJ: 00.000.000/0000-00\nCNPJ: 00.000.000/0000-00\n") { FontSize = 11 });
+                pCabecalho.Inlines.Add(new System.Windows.Documents.Run("CNPJ: 28.173.572/0001-91\nCNPJ: 52.356.963/0001-26\nCNPJ: 68.712.675/0001-05\n") { FontSize = 11 });
                 pCabecalho.Inlines.Add(new System.Windows.Documents.Run("Rua Buarque de Macedo, 3158,\nCentro, Garibaldi-RS\n") { FontSize = 11 });
                 pCabecalho.Inlines.Add(new System.Windows.Documents.Run(new string('-', colunas) + "\n") { FontSize = 11 });
                 pCabecalho.Inlines.Add(new System.Windows.Documents.Run("DOCUMENTO AUXILIAR DA NOTA FISCAL\nDE CONSUMIDOR ELETRONICA\n") { FontWeight = FontWeights.Black, FontSize = 11 });
