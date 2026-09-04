@@ -438,11 +438,11 @@ namespace T_PACE
                 {
                     _descontoManualVenda += valorTotalDevolvido;
                     AtualizarTotais();
-                    MessageBox.Show($"Produtos retornados ao estoque.\n\nCrédito de R$ {valorTotalDevolvido:N2} liberado no carrinho atual!", "Troca Efetuada", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"Troca registrada com sucesso.\n\nDesconto de R$ {valorTotalDevolvido:N2} aplicado.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    MessageBox.Show($"Devolução registrada.\nProdutos retornados ao estoque.\n\nEstorne o valor de R$ {valorTotalDevolvido:N2} ao cliente.", "Devolução Efetuada", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"Devolução registrada com sucesso.\n\nValor a estornar: R$ {valorTotalDevolvido:N2}", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
 
                 FecharTelaTroca();

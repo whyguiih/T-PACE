@@ -467,11 +467,24 @@
                                 <Border Padding="10" BorderBrush="#225E3A7D" BorderThickness="0,0,0,1">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <!-- Coluna da CheckBox -->
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="{Binding nome}" FontSize="16" FontWeight="Bold" Foreground="#2A1143" VerticalAlignment="Center"/>
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+
+                                        <!-- CheckBox conectada nativamente com a seleção do item -->
+                                        <CheckBox Grid.Column="0" VerticalAlignment="Center" Margin="0,0,15,0" 
+                                                  IsChecked="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}"
+                                                  Focusable="False">
+                                            <CheckBox.LayoutTransform>
+                                                <ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
+                                            </CheckBox.LayoutTransform>
+                                        </CheckBox>
+
+                                        <TextBlock Grid.Column="1" Text="{Binding nome}" FontSize="16" FontWeight="Bold" Foreground="#2A1143" VerticalAlignment="Center"/>
+
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal">
                                             <TextBlock Text="{Binding quantidade_comprada, StringFormat={}{0} un compradas}" FontSize="14" FontWeight="Bold" Foreground="#5E3A7D" VerticalAlignment="Center" Margin="0,0,15,0"/>
                                             <TextBlock Text="{Binding preco_unitario, StringFormat=R$ {0:N2}}" FontSize="16" FontWeight="Black" Foreground="#A45FCE" VerticalAlignment="Center"/>
                                         </StackPanel>
