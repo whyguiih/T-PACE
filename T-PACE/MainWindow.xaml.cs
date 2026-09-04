@@ -25,7 +25,8 @@ namespace T_PACE
             Task.Run(async () =>
             {
                 await SincronizacaoService.SincronizarProdutosAsync();
-                await SincronizacaoService.SincronizarVendasPendentesAsync(); // NOVO: Roda a fila ao abrir o PDV
+                await SincronizacaoService.SincronizarVendasPendentesAsync();
+                await SincronizacaoService.SincronizarTrocasPendentesAsync();
             });
 
             // ATUALIZANDO O PERFIL VISUAL
@@ -78,6 +79,10 @@ namespace T_PACE
             else if (e.Key == Key.F5)
             {
                 AbrirTelaDesconto();
+            }
+            else if (e.Key == Key.F6)
+            {
+                AbrirTelaTroca();
             }
             else if (e.Key == Key.F2)
             {
@@ -285,6 +290,166 @@ namespace T_PACE
             {
                 MessageBox.Show("Este item não está no cupom atual!", "Erro", MessageBoxButton.OK, MessageBoxImage.Warning);
                 txtBuscaCancelamento.SelectAll();
+            }
+        }
+
+        // ==========================================
+        // LÓGICA DE TROCAS E DEVOLUÇÕES (F6)
+        // ==========================================
+        private void AbrirTelaTroca()
+        {
+            OverlayTroca.Visibility = Visibility.Visible;
+            txtBuscaCupomTroca.Clear();
+            listaItensCupom.ItemsSource = null;
+            txtQtdTroca.Text = "1";
+            cmbTipoTroca.SelectedIndex = 0;
+            txtBuscaCupomTroca.Focus();
+        }
+
+        private void FecharTelaTroca()
+        {
+            OverlayTroca.Visibility = Visibility.Collapsed;
+            txtBusca.Focus();
+        }
+
+        // CONTROLES DE TECLADO (Fluxo de navegação)
+        private void TxtBuscaCupomTroca_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter) BtnBuscarCupom_Click(null, null);
+            else if (e.Key == Key.Escape) FecharTelaTroca();
+        }
+
+        private void ListaItensCupom_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                txtQtdTroca.Focus();
+                txtQtdTroca.SelectAll();
+            }
+            else if (e.Key == Key.Escape) FecharTelaTroca();
+        }
+
+        private void TxtQtdTroca_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                cmbTipoTroca.Focus();
+            }
+            else if (e.Key == Key.Escape) FecharTelaTroca();
+        }
+
+        private void CmbTipoTroca_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                BtnConfirmarTroca_Click(null, null);
+            }
+            else if (e.Key == Key.Escape) FecharTelaTroca();
+        }
+
+        // PROCESSAMENTO DE BANCO DE DADOS
+        private void BtnBuscarCupom_Click(object sender, RoutedEventArgs e)
+        {
+            string cupom = txtBuscaCupomTroca.Text.Trim();
+            if (string.IsNullOrEmpty(cupom)) return;
+
+            using (var conn = new Microsoft.Data.Sqlite.SqliteConnection(DatabaseConfig.ConnectionString))
+            {
+                var itens = conn.Query<ItemVendaTroca>(@"
+                    SELECT v.id as id_venda, p.codigo_barras, p.nome, iv.quantidade as quantidade_comprada, iv.preco_unitario
+                    FROM tb_vendas v
+                    JOIN tb_itens_venda iv ON v.id = iv.id_venda
+                    JOIN tb_produtos p ON iv.id_produto = p.id
+                    WHERE v.id_cupom = @Cupom", new { Cupom = cupom }).ToList();
+
+                if (itens.Count == 0)
+                {
+                    MessageBox.Show("Cupom não encontrado ou não possui itens registrados.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    listaItensCupom.ItemsSource = null;
+                }
+                else
+                {
+                    listaItensCupom.ItemsSource = itens;
+                    // Joga o foco pra lista para o usuário selecionar com as setas e espaço
+                    listaItensCupom.Focus();
+                    listaItensCupom.SelectedIndex = 0;
+                }
+            }
+        }
+
+        private void BtnConfirmarTroca_Click(object sender, RoutedEventArgs e)
+        {
+            if (listaItensCupom.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Selecione pelo menos um produto da lista (use o mouse, ou Espaço/Setas no teclado).", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (!decimal.TryParse(txtQtdTroca.Text, out decimal qtdTroca) || qtdTroca <= 0)
+            {
+                MessageBox.Show("A quantidade informada é inválida.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // 1. Validação de Segurança: Garante que o cliente não tente devolver mais do que comprou
+            foreach (ItemVendaTroca selecionado in listaItensCupom.SelectedItems)
+            {
+                if (qtdTroca > selecionado.quantidade_comprada)
+                {
+                    MessageBox.Show($"Você está tentando trocar {qtdTroca} unidades de '{selecionado.nome}', mas apenas {selecionado.quantidade_comprada} foram compradas neste cupom.\n\nReduza a quantidade informada ou troque os itens individualmente.", "Erro de Quantidade", MessageBoxButton.OK, MessageBoxImage.Error);
+                    txtQtdTroca.Focus();
+                    return;
+                }
+            }
+
+            string tipoStr = cmbTipoTroca.SelectedIndex == 0 ? "troca" : "devolucao";
+            decimal valorTotalDevolvido = 0m;
+
+            try
+            {
+                using (var conn = new Microsoft.Data.Sqlite.SqliteConnection(DatabaseConfig.ConnectionString))
+                {
+                    conn.Open();
+                    using (var tx = conn.BeginTransaction())
+                    {
+                        // 2. Loop de processamento de múltiplos itens
+                        foreach (ItemVendaTroca selecionado in listaItensCupom.SelectedItems)
+                        {
+                            decimal valorItem = qtdTroca * selecionado.preco_unitario;
+                            valorTotalDevolvido += valorItem;
+
+                            conn.Execute(@"INSERT INTO tb_trocas (tipo_troca, id_vendedor, produto_retornado, quantidade)
+                                           VALUES (@Tipo, @Vendedor, @Codigo, @Qtd)",
+                                         new { Tipo = tipoStr, Vendedor = Session.CurrentUserId, Codigo = selecionado.codigo_barras, Qtd = qtdTroca }, tx);
+
+                            conn.Execute("UPDATE tb_produtos SET quantidade = quantidade + @Qtd WHERE codigo_barras = @Codigo",
+                                         new { Qtd = qtdTroca, Codigo = selecionado.codigo_barras }, tx);
+                        }
+
+                        tx.Commit();
+                    }
+                }
+                Task.Run(async () => await SincronizacaoService.SincronizarTrocasPendentesAsync());
+                // 3. Resultado Financeiro
+                if (tipoStr == "troca")
+                {
+                    _descontoManualVenda += valorTotalDevolvido;
+                    AtualizarTotais();
+                    MessageBox.Show($"Produtos retornados ao estoque.\n\nCrédito de R$ {valorTotalDevolvido:N2} liberado no carrinho atual!", "Troca Efetuada", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show($"Devolução registrada.\nProdutos retornados ao estoque.\n\nEstorne o valor de R$ {valorTotalDevolvido:N2} ao cliente.", "Devolução Efetuada", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+
+                FecharTelaTroca();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao processar troca: {ex.Message}", "Erro Crítico", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -757,6 +922,7 @@ namespace T_PACE
             // Força o envio das vendas e SESSÕES DE CAIXA pendentes
             await SincronizacaoService.SincronizarVendasPendentesAsync();
             await SincronizacaoService.SincronizarSessoesCaixaAsync();
+            await SincronizacaoService.SincronizarTrocasPendentesAsync();
 
             // Limpa a Sessão de quem estava logado
             Session.CurrentUserId = 0;
@@ -994,6 +1160,14 @@ namespace T_PACE
             System.Windows.Media.RenderOptions.SetBitmapScalingMode(img, System.Windows.Media.BitmapScalingMode.NearestNeighbor);
             return img;
         }
+        public class ItemVendaTroca
+        {
+            public long id_venda { get; set; }
+            public string codigo_barras { get; set; }
+            public string nome { get; set; }
+            public decimal quantidade_comprada { get; set; }
+            public decimal preco_unitario { get; set; }
+        }
 
         // ==========================================
         // EVENTOS DE CLIQUE DO RODAPÉ
@@ -1002,6 +1176,7 @@ namespace T_PACE
         private void Rodape_F3_Click(object sender, MouseButtonEventArgs e) => AbrirTelaCancelamento();
         private void Rodape_F4_Click(object sender, MouseButtonEventArgs e) => AbrirTelaBusca();
         private void Rodape_F5_Click(object sender, MouseButtonEventArgs e) => AbrirTelaDesconto();
+        private void Rodape_F6_Click(object sender, MouseButtonEventArgs e) => AbrirTelaTroca();
         private void Rodape_F9_Click(object sender, MouseButtonEventArgs e) => AbrirTelaFechamento();
 
         public class ItemCupom : INotifyPropertyChanged

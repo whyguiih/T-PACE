@@ -309,5 +309,46 @@ namespace T_PACE
             }
             catch { }
         }
+        public static async Task SincronizarTrocasPendentesAsync()
+        {
+            try
+            {
+                using (var conn = new SqliteConnection(DatabaseConfig.ConnectionString))
+                {
+                    conn.Open();
+                    // Puxa as trocas que ainda não subiram
+                    var trocas = conn.Query("SELECT * FROM tb_trocas WHERE sincronizado = 0 OR sincronizado IS NULL").ToList();
+                    if (trocas.Count == 0) return;
+
+                    using (var client = new HttpClient())
+                    {
+                        var listaTrocas = trocas.Select(t => new
+                        {
+                            id_local = Convert.ToInt64(t.id_troca),
+                            tipo_troca = t.tipo_troca?.ToString(),
+                            data_troca = Convert.ToDateTime(t.data_troca).ToString("yyyy-MM-dd HH:mm:ss"),
+                            id_vendedor = Convert.ToInt64(t.id_vendedor),
+                            produto_retornado = t.produto_retornado?.ToString(),
+                            quantidade = Convert.ToDecimal(t.quantidade)
+                        }).ToList();
+
+                        string json = JsonSerializer.Serialize(listaTrocas);
+                        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                        var response = await client.PostAsync("https://tpace-api.whyguiih.workers.dev/api/app/trocas", content);
+
+                        // Se a nuvem salvar com sucesso, marca como 'sincronizado = 1' no banco local!
+                        if (response.IsSuccessStatusCode)
+                        {
+                            foreach (var t in listaTrocas)
+                            {
+                                conn.Execute("UPDATE tb_trocas SET sincronizado = 1 WHERE id_troca = @Id", new { Id = t.id_local });
+                            }
+                        }
+                    }
+                }
+            }
+            catch { } // Falha silenciosa para caso esteja sem internet (tenta depois)
+        }
     }
 }

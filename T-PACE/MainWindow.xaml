@@ -257,6 +257,7 @@
                 <TextBlock Text="[ F3 ] Cancelar Item" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5" Cursor="Hand" MouseLeftButtonUp="Rodape_F3_Click"/>
                 <TextBlock Text="[ F4 ] Buscar Produto" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5" Cursor="Hand" MouseLeftButtonUp="Rodape_F4_Click"/>
                 <TextBlock Text="[ F5 ] Aplicar Desconto" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5" Cursor="Hand" MouseLeftButtonUp="Rodape_F5_Click"/>
+                <TextBlock Text="[ F6 ] Trocas e Devoluções" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5" Cursor="Hand" MouseLeftButtonUp="Rodape_F6_Click"/>
                 <TextBlock Text="[ F9 ] Sair do Caixa" Foreground="#D6C4E8" FontSize="14" FontWeight="Bold" Margin="15,5" Cursor="Hand" MouseLeftButtonUp="Rodape_F9_Click"/>
             </WrapPanel>
         </Border>
@@ -424,6 +425,83 @@
                         <TextBox x:Name="txtValorFechamento" FontSize="28" FontWeight="Bold" Foreground="#2A1143" Padding="10,5" Background="#E6E0ED" BorderThickness="0" TextAlignment="Center" PreviewKeyDown="txtValorFechamento_PreviewKeyDown"/>
                     </StackPanel>
                     <TextBlock Grid.Row="2" Text="[ ESC ] Cancelar   [ ENTER ] Confirmar Encerramento" Foreground="#885E3A7D" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,15,0,0"/>
+                </Grid>
+            </Border>
+        </Border>
+        <!-- OVERLAY DE TROCAS E DEVOLUÇÕES (F6) -->
+        <Border x:Name="OverlayTroca" Grid.RowSpan="3" Background="#B21A0A2E" Visibility="Collapsed" Panel.ZIndex="100">
+            <Border Width="650" Height="520" Background="#F8F3FC" CornerRadius="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="30">
+                <Border.Effect>
+                    <DropShadowEffect Color="#2A1143" Opacity="0.8" BlurRadius="50" ShadowDepth="10"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="TROCAS E DEVOLUÇÕES" Foreground="#A45FCE" FontSize="22" FontWeight="Black" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+                    <Grid Grid.Row="1" Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="txtBuscaCupomTroca" Grid.Column="0" FontSize="18" FontWeight="Bold" Foreground="#2A1143" Padding="10,8" Background="#E6E0ED" BorderThickness="0" Margin="0,0,10,0" KeyDown="TxtBuscaCupomTroca_KeyDown"/>
+                        <Button x:Name="btnBuscarCupom" Grid.Column="1" Content="BUSCAR CUPOM" Background="#5E3A7D" Foreground="White" FontWeight="Bold" Padding="15,0" Click="BtnBuscarCupom_Click" Cursor="Hand">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="8"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                    </Grid>
+
+                    <!-- LISTA DE PRODUTOS DA VENDA -->
+                    <ListBox x:Name="listaItensCupom" Grid.Row="2" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="0,0,0,15" SelectionMode="Multiple" KeyDown="ListaItensCupom_KeyDown">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="10" BorderBrush="#225E3A7D" BorderThickness="0,0,0,1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding nome}" FontSize="16" FontWeight="Bold" Foreground="#2A1143" VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <TextBlock Text="{Binding quantidade_comprada, StringFormat={}{0} un compradas}" FontSize="14" FontWeight="Bold" Foreground="#5E3A7D" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                                            <TextBlock Text="{Binding preco_unitario, StringFormat=R$ {0:N2}}" FontSize="16" FontWeight="Black" Foreground="#A45FCE" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,15">
+                        <TextBlock Text="Qtd a Trocar:" VerticalAlignment="Center" FontWeight="Bold" Foreground="#5E3A7D" Margin="0,0,10,0"/>
+                        <TextBox x:Name="txtQtdTroca" Width="60" FontSize="18" FontWeight="Black" Foreground="#2A1143" Padding="5" Background="#E6E0ED" BorderThickness="0" TextAlignment="Center" Margin="0,0,20,0" Text="1" KeyDown="TxtQtdTroca_KeyDown"/>
+
+                        <TextBlock Text="Ação:" VerticalAlignment="Center" FontWeight="Bold" Foreground="#5E3A7D" Margin="0,0,10,0"/>
+                        <ComboBox x:Name="cmbTipoTroca" FontSize="16" FontWeight="Bold" Foreground="#2A1143" Padding="10,5" SelectedIndex="0" KeyDown="CmbTipoTroca_KeyDown">
+                            <ComboBoxItem Content="Troca (Gerar Desconto na Próxima)"/>
+                            <ComboBoxItem Content="Devolução (Estornar Dinheiro)"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="[ ESC ] Fechar" Foreground="#885E3A7D" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                        <Button Content="CONFIRMAR OPERAÇÃO" Background="#A45FCE" Foreground="White" FontWeight="Black" Padding="15,10" Click="BtnConfirmarTroca_Click" Cursor="Hand">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="8"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                    </StackPanel>
                 </Grid>
             </Border>
         </Border>

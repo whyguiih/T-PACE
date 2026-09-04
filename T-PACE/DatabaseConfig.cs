@@ -80,6 +80,11 @@ namespace T_PACE
 
                 // NOVO: Adiciona a coluna do Cupom Único na tabela de Vendas
                 try { connection.Execute("ALTER TABLE tb_vendas ADD COLUMN id_cupom VARCHAR(25);"); } catch { }
+
+                // NOVO: Cria a tabela de Trocas caso ela ainda não exista no banco local
+                try
+                { connection.Execute(@"CREATE TABLE IF NOT EXISTS tb_trocas (id_troca INTEGER PRIMARY KEY AUTOINCREMENT, tipo_troca VARCHAR(15) CHECK(tipo_troca IN ('troca', 'devolucao')), data_troca DATETIME DEFAULT CURRENT_TIMESTAMP, id_vendedor INTEGER, produto_retornado VARCHAR(20), quantidade DECIMAL(10,3) );"); } catch { }
+                try { connection.Execute("ALTER TABLE tb_trocas ADD COLUMN sincronizado BOOLEAN DEFAULT 0;"); } catch { }
             }
         }
     }
